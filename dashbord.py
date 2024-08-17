@@ -17,4 +17,9 @@ logoutButton.place(x=1100,y=10)
 subtitleLabel=Label(window,text='Welcome, Admin\t\t Date: 16/08/2024\t\t Time: 12:36:17 pm',font=('times new roman',15),bg='#4d636d')
 subtitleLabel.place(x=0,y=70,relwidth=1)
 
+leftFrame=Frame(window)
+leftFrame.place(x=0,y=102,width=200,height=555)
+
+
+
 window.mainloop()
