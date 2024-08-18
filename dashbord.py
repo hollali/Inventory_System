@@ -1,7 +1,14 @@
 from tkinter import *
 
+def employee_form():
+    employee_frame=Frame(window,width=1070,height=567)
+    employee_frame.place(x=200,y=100)
+    headingLabel=Label(employee_frame,text='Employee Details',font=('times new roman',16,'bold'),bg='#0f4d7d',fg='white')
+    headingLabel.place(x=0,y=0,relwidth=1)
 
+#*GUI PORT
 window=Tk()
+
 window.title("Dashboard")
 window.geometry('1270x668+0+0')
 window.resizable(0,0)
@@ -28,7 +35,7 @@ menuLabel=Label(leftFrame,text='Menu',font=('times new roman',20,),bg='#009688')
 menuLabel.pack(fill=X)
 
 employee_icon=PhotoImage(file='./images/employee (1).png')
-employee_button=Button(leftFrame,image=employee_icon,compound=LEFT,text='Employees',font=('times new roman',20,'bold'),anchor='w',padx=10)
+employee_button=Button(leftFrame,image=employee_icon,compound=LEFT,text='Employees',font=('times new roman',20,'bold'),anchor='w',padx=10,command=employee_form)
 employee_button.pack(fill=X)
 
 supplier_icon=PhotoImage(file='./images/supplier.png')
