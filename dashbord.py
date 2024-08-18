@@ -1,10 +1,16 @@
 from tkinter import *
 
 def employee_form():
+    global back_image
     employee_frame=Frame(window,width=1070,height=567)
     employee_frame.place(x=200,y=100)
-    headingLabel=Label(employee_frame,text='Employee Details',font=('times new roman',16,'bold'),bg='#0f4d7d',fg='white')
-    headingLabel.place(x=0,y=0,relwidth=1)
+
+    heading_label=Label(employee_frame,text='Employee Details',font=('times new roman',16,'bold'),bg='#0f4d7d',fg='white')
+    heading_label.place(x=0,y=0,relwidth=1)
+
+    back_image=PhotoImage(file='./images/back.png')
+    back_button=Button(employee_frame,image=back_image,bd=0,cursor='hand2',command=lambda: employee_frame.place_forget())
+    back_button.place(x=10,y=30)
 
 #*GUI PORT
 window=Tk()
