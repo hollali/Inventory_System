@@ -29,6 +29,12 @@ def employee_form():
     search_entry=Entry(search_frame,font=('times new roman',12),bg='lightyellow')
     search_entry.grid(row=0,column=1) 
 
+    search_button=Button(search_frame,text='Search',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
+    search_button.grid(row=0,column=2,padx=20)
+
+    show_button=Button(search_frame,text='Show All',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
+    show_button.grid(row=0,column=3)
+
 #*GUI PORT
 window=Tk()
 
