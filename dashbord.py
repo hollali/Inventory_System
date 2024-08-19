@@ -19,10 +19,10 @@ def employee_form():
     top_frame=Frame(employee_frame,bg='white')
     top_frame.place(x=0,y=60,relwidth=1,height=235)
 
-    search_frame=Frame(top_frame)
+    search_frame=Frame(top_frame,bg='white')
     search_frame.pack()
 
-    search_combobox=ttk.Combobox(search_frame,values=('Id','Name','Phone Number'),font=('times new roman',12),state='readonly')
+    search_combobox=ttk.Combobox(search_frame,values=('Id','Name','Phone Number'),font=('times new roman',12),state='readonly',justify=CENTER)
     search_combobox.set('Search By')
     search_combobox.grid(row=0,column=0,padx=20)
 
