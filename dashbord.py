@@ -35,12 +35,14 @@ def employee_form():
     show_button=Button(search_frame,text='Show All',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
     show_button.grid(row=0,column=3)
 
-    employee_treeview=ttk.Treeview(top_frame,columns=('id','name','number'),show='headings')
+    employee_treeview=ttk.Treeview(top_frame,columns=('id','name','email','number','salary'),show='headings')
     employee_treeview.pack(pady=10)
 
     employee_treeview.heading('id',text='EmpId')
     employee_treeview.heading('name',text='Name')
+    employee_treeview.heading('email',text='Email')
     employee_treeview.heading('number',text='Number')
+    employee_treeview.heading('salary',text='Salary')
 
 #*GUI PORT
 window=Tk()
