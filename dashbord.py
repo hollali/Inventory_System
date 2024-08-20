@@ -35,14 +35,30 @@ def employee_form():
     show_button=Button(search_frame,text='Show All',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
     show_button.grid(row=0,column=3)
 
-    employee_treeview=ttk.Treeview(top_frame,columns=('id','name','email','number','salary'),show='headings')
+    horizontal_scrollbar=Scrollbar(top_frame,orient=HORIZONTAL)
+    vertical_scrollbar=Scrollbar(top_frame,orient=VERTICAL)
+
+    employee_treeview=ttk.Treeview(top_frame,columns=('id','name','gender','email','number','salary','address'),show='headings',yscrollcommand=vertical_scrollbar.set,xscrollcommand=horizontal_scrollbar.set)
+    horizontal_scrollbar.pack(side=BOTTOM,fill=X)
+    vertical_scrollbar.pack(side=RIGHT,fill=Y)
+    horizontal_scrollbar.config(command=employee_treeview.xview)
     employee_treeview.pack(pady=10)
 
     employee_treeview.heading('id',text='EmpId')
     employee_treeview.heading('name',text='Name')
+    employee_treeview.heading('gender',text='Gender')
     employee_treeview.heading('email',text='Email')
     employee_treeview.heading('number',text='Number')
     employee_treeview.heading('salary',text='Salary')
+    employee_treeview.heading('address',text='Address')
+
+    employee_treeview.column('id',width=90)
+    employee_treeview.column('name',width=140)
+    employee_treeview.column('gender',width=100)
+    employee_treeview.column('email',width=220) 
+    employee_treeview.column('salary',width=100)
+    employee_treeview.column('number',width=180)
+    employee_treeview.column('address',width=180)  
 
 #*GUI PORT
 window=Tk()
