@@ -22,11 +22,11 @@ def employee_form():
     search_frame=Frame(top_frame,bg='white')
     search_frame.pack()
 
-    search_combobox=ttk.Combobox(search_frame,values=('Id','Name','Phone Number'),font=('times new roman',12),state='readonly',justify=CENTER)
+    search_combobox=ttk.Combobox(search_frame,values=('Id','Name','Phone Number'),font=('times new roman',16),state='readonly',)
     search_combobox.set('Search By')
     search_combobox.grid(row=0,column=0,padx=20)
 
-    search_entry=Entry(search_frame,font=('times new roman',12),bg='lightyellow')
+    search_entry=Entry(search_frame,font=('times new roman',16),bg='lightyellow')
     search_entry.grid(row=0,column=1) 
 
     search_button=Button(search_frame,text='Search',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
