@@ -6,7 +6,7 @@ from tkinter import ttk
 #!Function Port
 def employee_form():
     global back_image
-    employee_frame=Frame(window,width=1070,height=567,bg='white')
+    employee_frame=Frame(window,width=1470,height=567,bg='white')
     employee_frame.place(x=200,y=100)
 
     heading_label=Label(employee_frame,text='Employee Details',font=('times new roman',16,'bold'),bg='#0f4d7d',fg='white')
@@ -38,7 +38,7 @@ def employee_form():
     horizontal_scrollbar=Scrollbar(top_frame,orient=HORIZONTAL)
     vertical_scrollbar=Scrollbar(top_frame,orient=VERTICAL)
 
-    employee_treeview=ttk.Treeview(top_frame,columns=('id','name','gender','email','number','salary','address'),show='headings',yscrollcommand=vertical_scrollbar.set,xscrollcommand=horizontal_scrollbar.set)
+    employee_treeview=ttk.Treeview(top_frame,columns=('id','name','gender','email','number','Dob','salary','address'),show='headings',yscrollcommand=vertical_scrollbar.set,xscrollcommand=horizontal_scrollbar.set)
     horizontal_scrollbar.pack(side=BOTTOM,fill=X)
     vertical_scrollbar.pack(side=RIGHT,fill=Y,padx=(10,0))
     horizontal_scrollbar.config(command=employee_treeview.xview)
@@ -49,16 +49,18 @@ def employee_form():
     employee_treeview.heading('name',text='Name')
     employee_treeview.heading('gender',text='Gender')
     employee_treeview.heading('email',text='Email')
-    employee_treeview.heading('number',text='Number')
+    employee_treeview.heading('number',text='Phone Number')
+    employee_treeview.heading('Dob',text='Dob')
     employee_treeview.heading('salary',text='Salary')
     employee_treeview.heading('address',text='Address')
 
-    employee_treeview.column('id',width=90)
-    employee_treeview.column('name',width=140)
-    employee_treeview.column('gender',width=100)
+    employee_treeview.column('id',width=100)
+    employee_treeview.column('name',width=180)
+    employee_treeview.column('gender',width=120)
     employee_treeview.column('email',width=220) 
-    employee_treeview.column('salary',width=100)
+    employee_treeview.column('salary',width=140)
     employee_treeview.column('number',width=180)
+    employee_treeview.column('Dob',width=100)
     employee_treeview.column('address',width=180)
 
     detail_frame=Frame(employee_frame)
@@ -89,7 +91,7 @@ def employee_form():
 window=Tk()
 
 window.title("Dashboard")
-window.geometry('1270x688+0+0')
+window.geometry('1670x888+0+0')
 window.resizable(0,0)
 window.config(bg='white')
 
@@ -98,12 +100,12 @@ titleLabel=Label(window,image=bg_image,compound=LEFT,text=" Inventory Managment 
 titleLabel.place(x=0,y=0,relwidth=1)
 
 logoutButton=Button(window,text='Logout',font=('times new roman',20,'bold'),fg='#010c48',bg='white')
-logoutButton.place(x=1100,y=10)
+logoutButton.place(x=1420,y=10)
 
 subtitleLabel=Label(window,text='Welcome, Admin\t\t Date: 16/08/2024\t\t Time: 12:36:17 pm',font=('times new roman',15),bg='#4d636d')
 subtitleLabel.place(x=0,y=70,relwidth=1)
 
-leftFrame=Frame(window)
+leftFrame=Frame(window,bg='white')
 leftFrame.place(x=0,y=102,width=200,height=550)
 
 logoImage=PhotoImage(file='./images/logo.png')
@@ -162,7 +164,7 @@ total_sup_count_label=Label(sup_frame,text='0',bg='#8E44Ad',fg='white',font=('ti
 total_sup_count_label.pack()
 
 cat_frame=Frame(window,bg='#27AE68',bd=3,relief=RIDGE)
-cat_frame.place(x=400,y=310,height=170,width=280)
+cat_frame.place(x=400,y=350,height=170,width=280)
 total_cat_icon=PhotoImage(file='./images/total_cat.png')
 total_cat_icon_label=Label(cat_frame,image=total_cat_icon,bg='#27AE68')
 total_cat_icon_label.pack(pady=10)
@@ -174,7 +176,7 @@ total_cat_count_label=Label(cat_frame,text='0',bg='#27AE68',fg='white',font=('ti
 total_cat_count_label.pack()
 
 products_frame=Frame(window,bg='#28E',bd=3,relief=RIDGE)
-products_frame.place(x=800,y=310,height=170,width=280)
+products_frame.place(x=800,y=350,height=170,width=280)
 total_products_icon=PhotoImage(file='./images/total_prod.png')
 total_products_icon_label=Label(products_frame,image=total_products_icon,bg='#28E')
 total_products_icon_label.pack(pady=10)
@@ -186,7 +188,7 @@ total_products_count_label=Label(products_frame,text='0',bg='#28E',fg='white',fo
 total_products_count_label.pack()
 
 sales_frame=Frame(window,bg='#8E444D',bd=3,relief=RIDGE)
-sales_frame.place(x=600,y=495,height=170,width=280)
+sales_frame.place(x=1200,y=125,height=170,width=280)
 total_sales_icon=PhotoImage(file='./images/total_sales.png')
 total_sales_icon_label=Label(sales_frame,image=total_sales_icon,bg='#8E444D')
 total_sales_icon_label.pack(pady=10)
