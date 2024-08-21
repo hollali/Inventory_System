@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import ttk
-
+from tkcalendar import DateEntry
 
 
 #!Function Port
@@ -54,13 +54,13 @@ def employee_form():
     employee_treeview.heading('salary',text='Salary')
     employee_treeview.heading('address',text='Address')
 
-    employee_treeview.column('id',width=100)
-    employee_treeview.column('name',width=180)
-    employee_treeview.column('gender',width=120)
-    employee_treeview.column('email',width=220) 
-    employee_treeview.column('salary',width=140)
-    employee_treeview.column('number',width=180)
-    employee_treeview.column('Dob',width=100)
+    employee_treeview.column('id',width=120)
+    employee_treeview.column('name',width=240)
+    employee_treeview.column('gender',width=140)
+    employee_treeview.column('email',width=260) 
+    employee_treeview.column('salary',width=160)
+    employee_treeview.column('number',width=200)
+    employee_treeview.column('Dob',width=140)
     employee_treeview.column('address',width=180)
 
     detail_frame=Frame(employee_frame)
@@ -85,7 +85,12 @@ def employee_form():
     gender_label.grid(row=1,column=0,padx=20,pady=10)
     gender_combobox=ttk.Combobox(detail_frame,values=('Male','Female'),font=('times new roman',16,'bold'),width=18,state='readonly')
     gender_combobox.set('Select Gender')
-    gender_combobox.grid(row=1,column=1)    
+    gender_combobox.grid(row=1,column=1)
+
+    dob_label = Label(detail_frame,text='Date of Birth',font=('times new roman',16,'bold'))
+    dob_label.grid(row=1,column=2,padx=20,pady=10)
+    dob_date_entry=DateEntry(detail_frame,width=18,font=('times new roman',16,'bold'),state='readonly',date_pattern='dd/mm/yyyy')
+    dob_date_entry.grid(row=1,column=3)    
 
 #*GUI PORT
 window=Tk()
