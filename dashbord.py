@@ -23,7 +23,7 @@ def employee_form():
     search_frame.pack()
 
     search_combobox=ttk.Combobox(search_frame,values=('Id','Name','Phone Number'),font=('times new roman',16),state='readonly',)
-    search_combobox.set('Search By')
+    search_combobox.set('Sort By')
     search_combobox.grid(row=0,column=0,padx=20)
 
     search_entry=Entry(search_frame,font=('times new roman',16),bg='lightyellow')
@@ -40,9 +40,10 @@ def employee_form():
 
     employee_treeview=ttk.Treeview(top_frame,columns=('id','name','gender','email','number','salary','address'),show='headings',yscrollcommand=vertical_scrollbar.set,xscrollcommand=horizontal_scrollbar.set)
     horizontal_scrollbar.pack(side=BOTTOM,fill=X)
-    vertical_scrollbar.pack(side=RIGHT,fill=Y)
+    vertical_scrollbar.pack(side=RIGHT,fill=Y,padx=(10,0))
     horizontal_scrollbar.config(command=employee_treeview.xview)
-    employee_treeview.pack(pady=10)
+    vertical_scrollbar.config(command=employee_treeview.yview)
+    employee_treeview.pack(pady=(10,0))
 
     employee_treeview.heading('id',text='EmpId')
     employee_treeview.heading('name',text='Name')
