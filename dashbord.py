@@ -59,13 +59,37 @@ def employee_form():
     employee_treeview.column('email',width=220) 
     employee_treeview.column('salary',width=100)
     employee_treeview.column('number',width=180)
-    employee_treeview.column('address',width=180)  
+    employee_treeview.column('address',width=180)
+
+    detail_frame=Frame(employee_frame)
+    detail_frame.place(x=0,y=300)
+
+    empid_label=Label(detail_frame,text="Id",font=('times new roman',16,'bold'))
+    empid_label.grid(row=0,column=0,padx=20,pady=10)
+    empid_entry=Entry(detail_frame,font=('times new roman',14,'bold'),bg='lightyellow')
+    empid_entry.grid(row=0,column=1,padx=20,pady=10)
+
+    name_label=Label(detail_frame,text="Name",font=('times new roman',16,'bold'))
+    name_label.grid(row=0,column=2,padx=20,pady=10)
+    name_entry=Entry(detail_frame,font=('times new roman',14,'bold'),bg='lightyellow')
+    name_entry.grid(row=0,column=3,padx=20,pady=10)
+
+    email_label=Label(detail_frame,text="Email",font=('times new roman',16,'bold'))
+    email_label.grid(row=0,column=4,padx=20,pady=10)
+    email_entry=Entry(detail_frame,font=('times new roman',14,'bold'),bg='lightyellow')
+    email_entry.grid(row=0,column=5,padx=20,pady=10) 
+
+    gender_label=Label(detail_frame,text="Gender",font=('times new roman',16,'bold'))
+    gender_label.grid(row=1,column=0,padx=20,pady=10)
+    gender_combobox=ttk.Combobox(detail_frame,values=('Male','Female'),font=('times new roman',16,'bold'),width=18,state='readonly')
+    gender_combobox.set('Select Gender')
+    gender_combobox.grid(row=1,column=1)    
 
 #*GUI PORT
 window=Tk()
 
 window.title("Dashboard")
-window.geometry('1270x668+0+0')
+window.geometry('1270x688+0+0')
 window.resizable(0,0)
 window.config(bg='white')
 
