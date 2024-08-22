@@ -38,7 +38,7 @@ def employee_form():
     horizontal_scrollbar=Scrollbar(top_frame,orient=HORIZONTAL)
     vertical_scrollbar=Scrollbar(top_frame,orient=VERTICAL)
 
-    employee_treeview=ttk.Treeview(top_frame,columns=('id','name','gender','email','number','Dob','salary','address'),show='headings',yscrollcommand=vertical_scrollbar.set,xscrollcommand=horizontal_scrollbar.set)
+    employee_treeview=ttk.Treeview(top_frame,columns=('id','name','gender','email','number','Dob','salary','address','usertype','password'),show='headings',yscrollcommand=vertical_scrollbar.set,xscrollcommand=horizontal_scrollbar.set)
     horizontal_scrollbar.pack(side=BOTTOM,fill=X)
     vertical_scrollbar.pack(side=RIGHT,fill=Y,padx=(10,0))
     horizontal_scrollbar.config(command=employee_treeview.xview)
@@ -53,6 +53,8 @@ def employee_form():
     employee_treeview.heading('Dob',text='Dob')
     employee_treeview.heading('salary',text='Salary')
     employee_treeview.heading('address',text='Address')
+    employee_treeview.heading('usertype',text='User Type')
+    employee_treeview.heading('password',text='Password')
 
     employee_treeview.column('id',width=120)
     employee_treeview.column('name',width=240)
@@ -62,23 +64,25 @@ def employee_form():
     employee_treeview.column('number',width=200)
     employee_treeview.column('Dob',width=140)
     employee_treeview.column('address',width=180)
+    employee_treeview.column('usertype',width=140)
+    employee_treeview.column('password',width=140)
 
     detail_frame=Frame(employee_frame)
-    detail_frame.place(x=0,y=300)
+    detail_frame.place(x=50,y=300)
 
     empid_label=Label(detail_frame,text="Id",font=('times new roman',16,'bold'))
     empid_label.grid(row=0,column=0,padx=20,pady=10)
-    empid_entry=Entry(detail_frame,font=('times new roman',14,'bold'),bg='lightyellow')
+    empid_entry=Entry(detail_frame,font=('times new roman',16,'bold'),bg='lightyellow')
     empid_entry.grid(row=0,column=1,padx=20,pady=10)
 
     name_label=Label(detail_frame,text="Name",font=('times new roman',16,'bold'))
     name_label.grid(row=0,column=2,padx=20,pady=10)
-    name_entry=Entry(detail_frame,font=('times new roman',14,'bold'),bg='lightyellow')
+    name_entry=Entry(detail_frame,font=('times new roman',16,'bold'),bg='lightyellow')
     name_entry.grid(row=0,column=3,padx=20,pady=10)
 
     email_label=Label(detail_frame,text="Email",font=('times new roman',16,'bold'))
     email_label.grid(row=0,column=4,padx=20,pady=10)
-    email_entry=Entry(detail_frame,font=('times new roman',14,'bold'),bg='lightyellow')
+    email_entry=Entry(detail_frame,font=('times new roman',16,'bold'),bg='lightyellow')
     email_entry.grid(row=0,column=5,padx=20,pady=10) 
 
     gender_label=Label(detail_frame,text="Gender",font=('times new roman',16,'bold'))
@@ -90,7 +94,33 @@ def employee_form():
     dob_label = Label(detail_frame,text='Date of Birth',font=('times new roman',16,'bold'))
     dob_label.grid(row=1,column=2,padx=20,pady=10)
     dob_date_entry=DateEntry(detail_frame,width=18,font=('times new roman',16,'bold'),state='readonly',date_pattern='dd/mm/yyyy')
-    dob_date_entry.grid(row=1,column=3)    
+    dob_date_entry.grid(row=1,column=3)
+
+    number_label=Label(detail_frame,text='Phone Number',font=('times new roman',16,'bold'))
+    number_label.grid(row=1,column=4,padx=20,pady=10)
+    number_entry=Entry(detail_frame,font=('times new roman',16,'bold'),bg='lightyellow')
+    number_entry.grid(row=1,column=5,padx=20,pady=10)
+
+    salary_label=Label(detail_frame,text='Salary',font=('times new roman',16,'bold'))
+    salary_label.grid(row=2,column=0,padx=20,pady=10)
+    salary_entry=Entry(detail_frame,font=('times new roman',16,'bold'),bg='lightyellow')
+    salary_entry.grid(row=2,column=1,padx=20,pady=10)
+
+    address_label=Label(detail_frame,text='Address',font=('times new roman',16,'bold'))
+    address_label.grid(row=2,column=2,padx=20,pady=10,sticky='w')
+    address_text=Text(detail_frame,width=20,height=3,font=('times new roman',16,'bold'))
+    address_text.grid(row=2,column=3,padx=20,pady=10)
+
+    usertype_label=Label(detail_frame,text="User type",font=('times new roman',16,'bold'))
+    usertype_label.grid(row=2,column=4,padx=20,pady=10)
+    usertype_combobox=ttk.Combobox(detail_frame,values=('Admin','Employee'),font=('times new roman',16,'bold'),width=18,state='readonly')
+    usertype_combobox.set('Employee Type')
+    usertype_combobox.grid(row=2,column=5)   
+
+    password_label=Label(detail_frame,text='Password',font=('times new roman',16,'bold'))
+    password_label.grid(row=3,column=0,padx=20,pady=10)
+    password_entry=Entry(detail_frame,font=('times new roman',16,'bold'),bg='lightyellow')
+    password_entry.grid(row=3,column=1,padx=20,pady=10)    
 
 #*GUI PORT
 window=Tk()
