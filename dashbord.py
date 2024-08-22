@@ -123,7 +123,7 @@ def employee_form():
     password_entry.grid(row=3,column=1,padx=20,pady=10)    
 
     button_frame=Frame(employee_frame,bg='white')
-    button_frame.place(x=200,y=500)
+    button_frame.place(x=400,y=530)
 
     add_button=Button(button_frame,text='Add',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
     add_button.grid(row=0,column=0,padx=20)
