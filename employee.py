@@ -1,10 +1,21 @@
 from tkinter import *
 from tkinter import ttk
 from tkcalendar import DateEntry
+from tkinter import messagebox
 import pymysql
 
 def connect_database():
-    connection=pymysql.connect(host='localhost',user='root',password='')
+    try:
+        connection = pymysql.connect(host='localhost',user='root',password='Vendetta7080')
+        cursor = connection.cursor()
+    except:
+        messagebox.showerror('Error','Connection Failed')
+        return
+    cursor.execute('CREATE DATABASE IF NOT EXISTS inventory_system')
+    cursor.execute('USE inventory_system')
+    cursor.execute('CREATE TABLE IF NOT EXISTS employee_data (id INT PRIMARY KEY, name VARCHAR(100),gender VARCHAR(50),email VARCHAR(100),number VARCHAR(15),Dob VARCHAR(30),salary VARCHAR(50),address VARCHAR(50),usertype VARCHAR(50),password VARCHAR(50))')
+
+connect_database()    
 
 #!Function Port
 def employee_form(window):
