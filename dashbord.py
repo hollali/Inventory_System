@@ -1,7 +1,4 @@
 from tkinter import *
-from tkinter import ttk
-from tkcalendar import DateEntry
-import pymysql
 from employee import employee_form
 
 

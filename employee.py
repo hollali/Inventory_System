@@ -1,6 +1,11 @@
 from tkinter import *
 from tkinter import ttk
 from tkcalendar import DateEntry
+import pymysql
+
+def connect_database():
+    connection=pymysql.connect(host='localhost',user='root',password='')
+
 #!Function Port
 def employee_form(window):
     global back_image
