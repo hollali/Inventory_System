@@ -6,7 +6,7 @@ import pymysql
 
 def connect_database():
     try:
-        connection = pymysql.connect(host='localhost',user='root',password='Vendetta7080')
+        connection = pymysql.connect(host='localhost',user='root',password='')
         cursor = connection.cursor()
     except:
         messagebox.showerror('Error','Connection Failed')
