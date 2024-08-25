@@ -16,6 +16,12 @@ def connect_database():
     cursor.execute('CREATE TABLE IF NOT EXISTS employee_data (empid INT PRIMARY KEY, name VARCHAR(100),gender VARCHAR(50),email VARCHAR(100),number VARCHAR(15),dob VARCHAR(30),salary VARCHAR(50),address VARCHAR(50),usertype VARCHAR(50),password VARCHAR(50))')
     return cursor,connection
 
+def treeview_data():
+    cursor,connection=connect_database()
+    if not cursor or not connection:
+        return
+    cursor.execute('SELECT * from employee_data')
+    employee_record=cursor.fetchall()
 
 def add_employee(empid,name,gender,email,number,dob,salary,address,usertype,password):
     if (empid=='' or name=='' or email=='' or number=='' or gender=='Select Gender' or  salary==''or address=='\n' or usertype=='Employee Type' or password==''):
@@ -24,7 +30,10 @@ def add_employee(empid,name,gender,email,number,dob,salary,address,usertype,pass
         cursor,connection=connect_database()
         if not cursor or connection:
             return
-        cursor.execute()     
+        cursor.execute('INSERT INTO employee_data VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(empid,name,gender,email,number,dob,salary,address,usertype,password))
+        connection.commit()
+        treeview_data()
+        messagebox.showinfo('Success','Data is inserted Sucessfully')   
 
 #!Function Port
 def employee_form(window):
