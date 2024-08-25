@@ -21,7 +21,9 @@ def treeview_data():
     if not cursor or not connection:
         return
     cursor.execute('SELECT * from employee_data')
-    employee_record=cursor.fetchall()
+    employee_records=cursor.fetchall()
+    for records in employee_records:
+        employee_treeview.insert('',END,values=records)
 
 def add_employee(empid,name,gender,email,number,dob,salary,address,usertype,password):
     if (empid=='' or name=='' or email=='' or number=='' or gender=='Select Gender' or  salary==''or address=='\n' or usertype=='Employee Type' or password==''):
@@ -37,7 +39,7 @@ def add_employee(empid,name,gender,email,number,dob,salary,address,usertype,pass
 
 #!Function Port
 def employee_form(window):
-    global back_image
+    global back_image,employee_treeview
     employee_frame=Frame(window,width=1470,height=567,bg='white')
     employee_frame.place(x=200,y=100)
 
