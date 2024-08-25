@@ -22,8 +22,10 @@ def treeview_data():
         return
     cursor.execute('SELECT * from employee_data')
     employee_records=cursor.fetchall()
+    employee_treeview.delete(employee_treeview.get_children())
     for records in employee_records:
         employee_treeview.insert('',END,values=records)
+
 
 def add_employee(empid,name,gender,email,number,dob,salary,address,usertype,password):
     if (empid=='' or name=='' or email=='' or number=='' or gender=='Select Gender' or  salary==''or address=='\n' or usertype=='Employee Type' or password==''):
@@ -100,6 +102,8 @@ def employee_form(window):
     employee_treeview.column('address',width=180)
     employee_treeview.column('usertype',width=140)
     employee_treeview.column('password',width=140)
+
+    treeview_data() 
 
     detail_frame=Frame(employee_frame,bg='white')
     detail_frame.place(x=50,y=300)
