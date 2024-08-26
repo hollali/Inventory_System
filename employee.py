@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 from tkcalendar import DateEntry
+from datetime import date
 from tkinter import messagebox
 import pymysql
 
@@ -43,11 +44,11 @@ def clear_fields(empid_entry,name_entry,email_entry,dob_date_entry,gender_combob
     empid_entry.delete(0,END)
     name_entry.delete(0,END)
     email_entry.delete(0,END)
-    dob_date_entry.delete(0,END)
-    gender_combobox.delete(0,END)
+    dob_date_entry.delete(date.today())
+    gender_combobox.set('Select Gender')
     number_entry.delete(0,END)
-    address_text.delete(0,END)
-    usertype_combobox.delete(0,END)
+    address_text.delete(1.0,END)
+    usertype_combobox.delete('Select User type')
     salary_entry.delete(0,END)
     password_entry.delete(0,END)        
 
