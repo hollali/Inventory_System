@@ -39,6 +39,18 @@ def add_employee(empid,name,gender,email,number,dob,salary,address,usertype,pass
         treeview_data()
         messagebox.showinfo('Success','Data is inserted Sucessfully')   
 
+def clear_fields(empid_entry,name_entry,email_entry,dob_date_entry,gender_combobox,number_entry,address_text,usertype_combobox,salary_entry,password_entry):
+    empid_entry.delete(0,END)
+    name_entry.delete(0,END)
+    email_entry.delete(0,END)
+    dob_date_entry.delete(0,END)
+    gender_combobox.delete(0,END)
+    number_entry.delete(0,END)
+    address_text.delete(0,END)
+    usertype_combobox.delete(0,END)
+    salary_entry.delete(0,END)
+    password_entry.delete(0,END)        
+
 #!Function Port
 def employee_form(window):
     global back_image,employee_treeview
@@ -172,5 +184,5 @@ def employee_form(window):
     delete_button=Button(button_frame,text='Delete',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
     delete_button.grid(row=0,column=2,padx=20)
 
-    clear_button=Button(button_frame,text='Clear',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
+    clear_button=Button(button_frame,text='Clear',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:clear_fields(empid_entry,name_entry,email_entry,dob_date_entry,gender_combobox,number_entry,address_text,usertype_combobox,salary_entry,password_entry))
     clear_button.grid(row=0,column=3,padx=20)
