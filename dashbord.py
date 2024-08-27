@@ -11,7 +11,7 @@ window.resizable(0,0)
 window.config(bg='white')
 
 bg_image=PhotoImage(file='./images/inventory1.png')
-titleLabel=Label(window,image=bg_image,compound=LEFT,text=" Inventory Managment System",font=('times new roman',40,'bold'),bg='#010c48',fg='white',anchor='w',padx=20)
+titleLabel=Label(window,image=bg_image,compound=LEFT,text=" Inventory Management System",font=('times new roman',40,'bold'),bg='#010c48',fg='white',anchor='w',padx=20)
 titleLabel.place(x=0,y=0,relwidth=1)
 
 logoutButton=Button(window,text='Logout',font=('times new roman',20,'bold'),fg='#010c48',bg='white')
