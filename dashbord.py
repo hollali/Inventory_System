@@ -114,5 +114,4 @@ total_sales_label.pack()
 total_sales_count_label=Label(sales_frame,text='0',bg='#8E444D',fg='white',font=('times new roman',30,'bold'))
 total_sales_count_label.pack()
 
-
 window.mainloop()
