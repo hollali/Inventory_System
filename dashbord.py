@@ -5,7 +5,7 @@ from employee import employee_form
 #*GUI PORT
 window=Tk()
 
-window.title("Dashboard")
+window.title("Inventory System Dashboard")
 window.geometry('1670x850+0+0')
 window.resizable(0,0)
 window.config(bg='white')
