@@ -71,6 +71,8 @@ def add_employee(empid, name, gender, email, number, dob, salary, address, usert
             if connection:
                 connection.close()
 
+
+#! Function to connect to the MYSQL database
 def connect_database():
     try:
         connection = pymysql.connect(host='localhost',user='root',password='')
