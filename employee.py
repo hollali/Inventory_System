@@ -4,8 +4,9 @@ from tkcalendar import DateEntry
 from datetime import date
 from tkinter import messagebox
 import pymysql
-
+import sqlite3
 #! Function to connect to the MYSQL database
+"""
 def connect_database():
     try:
         connection = pymysql.connect(host='localhost',user='root',password='')
@@ -52,6 +53,76 @@ def clear_fields(empid_entry,name_entry,email_entry,dob_date_entry,gender_combob
     usertype_combobox.delete('Select User type')
     salary_entry.delete(0,END)
     password_entry.delete(0,END)        
+"""
+#! Function to connect to the SQL LITE database
+def connect_database():
+    try:
+        connection = sqlite3.connect('inventory_system.db')
+        cursor = connection.cursor()
+    except:
+        messagebox.showerror('Error','Connection Failed')
+        return None, None
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS employee_data (
+            empid INTEGER PRIMARY KEY,
+            name TEXT,
+            gender TEXT,
+            email TEXT,
+            number TEXT,
+            dob TEXT,
+            salary TEXT,
+            address TEXT,
+            usertype TEXT,
+            password TEXT
+        )
+    ''')
+    connection.commit()
+    return cursor, connection
+
+def treeview_data():
+    cursor, connection = connect_database()
+    if not cursor or not connection:
+        return
+    cursor.execute('SELECT * FROM employee_data')
+    employee_records = cursor.fetchall()
+    employee_treeview.delete(*employee_treeview.get_children())
+    for records in employee_records:
+        employee_treeview.insert('', END, values=records)
+
+
+def add_employee(empid, name, gender, email, number, dob, salary, address, usertype, password):
+    if (empid == '' or name == '' or email == '' or number == '' or gender == 'Select Gender'
+            or salary == '' or address == '\n' or usertype == 'Employee Type' or password == ''):
+        messagebox.showerror('Error', 'All fields are required')
+    else:
+        cursor, connection = connect_database()
+        if not cursor or not connection:
+            return
+        try:
+            cursor.execute('''
+                INSERT INTO employee_data 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (empid, name, gender, email, number, dob, salary, address, usertype, password))
+            connection.commit()
+            treeview_data()
+            messagebox.showinfo('Success', 'Data inserted successfully')
+        except sqlite3.IntegrityError:
+            messagebox.showerror('Error', 'Employee ID must be unique')
+
+def clear_fields(empid_entry, name_entry, email_entry, dob_date_entry,
+                gender_combobox, number_entry, address_text,
+                usertype_combobox, salary_entry, password_entry):
+    empid_entry.delete(0, END)
+    name_entry.delete(0, END)
+    email_entry.delete(0, END)
+    dob_date_entry.delete(0, END)  # fixed for sqlite (delete text, not date)
+    gender_combobox.set('Select Gender')
+    number_entry.delete(0, END)
+    address_text.delete(1.0, END)
+    usertype_combobox.set('Employee Type')  # fix: use set() not delete()
+    salary_entry.delete(0, END)
+    password_entry.delete(0, END)
 
 #!Function Port
 def employee_form(window):
@@ -177,7 +248,7 @@ def employee_form(window):
     button_frame=Frame(employee_frame,bg='white')
     button_frame.place(x=400,y=530)
 
-    add_button=Button(button_frame,text='Add',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:add_employee(empid_entry.get(),name_entry.get(),email_entry.get(),number_entry.get(),dob_date_entry.get(),gender_combobox,salary_entry.get(),address_text.get(1.0,END),usertype_combobox.get(),password_entry.get()))
+    add_button=Button(button_frame,text='Add',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:add_employee(empid_entry.get(),name_entry.get(),email_entry.get(),number_entry.get(),dob_date_entry.get(),gender_combobox.get(),salary_entry.get(),address_text.get(1.0,END),usertype_combobox.get(),password_entry.get()))
     add_button.grid(row=0,column=0,padx=20)
 
     update_button=Button(button_frame,text='Update',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
