@@ -92,7 +92,7 @@ def treeview_data():
 
 
 def add_employee(empid, name, gender, email, number, dob, salary, address, usertype, password):
-    if (empid == '' or name == '' or email == '' or number == '' or gender == 'Select Gender'
+    if (empid == '' or name == ''  or gender == 'Select Gender' or email == '' or number == '' or dob == '' 
             or salary == '' or address == '\n' or usertype == 'Employee Type' or password == ''):
         messagebox.showerror('Error', 'All fields are required')
     else:
@@ -110,18 +110,17 @@ def add_employee(empid, name, gender, email, number, dob, salary, address, usert
         except sqlite3.IntegrityError:
             messagebox.showerror('Error', 'Employee ID must be unique')
 
-def clear_fields(empid_entry, name_entry, email_entry, dob_date_entry,
-                gender_combobox, number_entry, address_text,
-                usertype_combobox, salary_entry, password_entry):
+def clear_fields(empid_entry, name_entry, gender_combobox, email_entry, number_entry, dob_date_entry,salary_entry,
+    address_text,usertype_combobox,  password_entry):
     empid_entry.delete(0, END)
     name_entry.delete(0, END)
-    email_entry.delete(0, END)
-    dob_date_entry.delete(0, END)  # fixed for sqlite (delete text, not date)
     gender_combobox.set('Select Gender')
+    email_entry.delete(0, END)
     number_entry.delete(0, END)
+    dob_date_entry.delete(0, END)  # fixed for sqlite (delete text, not date)
+    salary_entry.delete(0, END)
     address_text.delete(1.0, END)
     usertype_combobox.set('Employee Type')  # fix: use set() not delete()
-    salary_entry.delete(0, END)
     password_entry.delete(0, END)
 
 #!Function Port
@@ -159,7 +158,7 @@ def employee_form(window):
     horizontal_scrollbar=Scrollbar(top_frame,orient=HORIZONTAL)
     vertical_scrollbar=Scrollbar(top_frame,orient=VERTICAL)
 
-    employee_treeview=ttk.Treeview(top_frame,columns=('empid','name','gender','email','number','dob','salary','address','usertype','password'),show='headings',yscrollcommand=vertical_scrollbar.set,xscrollcommand=horizontal_scrollbar.set)
+    employee_treeview=ttk.Treeview(top_frame,columns=('empid','name','email','number','dob','gender','salary','address','usertype','password'),show='headings',yscrollcommand=vertical_scrollbar.set,xscrollcommand=horizontal_scrollbar.set)
     horizontal_scrollbar.pack(side=BOTTOM,fill=X)
     vertical_scrollbar.pack(side=RIGHT,fill=Y,padx=(10,0))
     horizontal_scrollbar.config(command=employee_treeview.xview)
@@ -168,10 +167,10 @@ def employee_form(window):
 
     employee_treeview.heading('empid',text='Employee Id')
     employee_treeview.heading('name',text='Name')
-    employee_treeview.heading('gender',text='Gender')
     employee_treeview.heading('email',text='Email')
     employee_treeview.heading('number',text='Phone Number')
     employee_treeview.heading('dob',text='Date of Birth')
+    employee_treeview.heading('gender',text='Gender')
     employee_treeview.heading('salary',text='Salary')
     employee_treeview.heading('address',text='Address')
     employee_treeview.heading('usertype',text='User Type')
@@ -179,11 +178,11 @@ def employee_form(window):
 
     employee_treeview.column('empid',width=120)
     employee_treeview.column('name',width=240)
-    employee_treeview.column('gender',width=140)
-    employee_treeview.column('email',width=260) 
-    employee_treeview.column('salary',width=160)
+    employee_treeview.column('email',width=260)
     employee_treeview.column('number',width=200)
-    employee_treeview.column('dob',width=140)
+    employee_treeview.column('dob',width=140) 
+    employee_treeview.column('gender',width=140)
+    employee_treeview.column('salary',width=160)
     employee_treeview.column('address',width=180)
     employee_treeview.column('usertype',width=140)
     employee_treeview.column('password',width=140)
@@ -248,7 +247,7 @@ def employee_form(window):
     button_frame=Frame(employee_frame,bg='white')
     button_frame.place(x=400,y=530)
 
-    add_button=Button(button_frame,text='Add',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:add_employee(empid_entry.get(),name_entry.get(),email_entry.get(),number_entry.get(),dob_date_entry.get(),gender_combobox.get(),salary_entry.get(),address_text.get(1.0,END),usertype_combobox.get(),password_entry.get()))
+    add_button=Button(button_frame,text='Add',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:add_employee(empid_entry.get(),name_entry.get(),gender_combobox.get(),email_entry.get(),number_entry.get(),dob_date_entry.get(),salary_entry.get(),address_text.get(1.0,END),usertype_combobox.get(),password_entry.get()))
     add_button.grid(row=0,column=0,padx=20)
 
     update_button=Button(button_frame,text='Update',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
