@@ -46,7 +46,7 @@ def treeview_data():
         masked_record[9] = '•' * len(masked_record[9])  # Mask password
         employee_treeview.insert('', END, values=masked_record)
 
-# Add new employee
+#!Add new employee
 def add_employee(empid, name, gender, email, number, dob, salary, address, usertype, password):
     if (empid == '' or name == '' or gender == 'Select Gender' or email == '' or number == '' or dob == ''
             or salary == '' or address == '\n' or usertype == 'Employee Type' or password == ''):
@@ -136,22 +136,22 @@ def employee_form(window):
     detail_frame = Frame(employee_frame, bg='white')
     detail_frame.place(x=50, y=300)
 
-    empid_entry = Entry(detail_frame, font=('times new roman', 16, 'bold'), bg='lightyellow')
-    name_entry = Entry(detail_frame, font=('times new roman', 16, 'bold'), bg='lightyellow')
-    email_entry = Entry(detail_frame, font=('times new roman', 16, 'bold'), bg='lightyellow')
-    gender_combobox = ttk.Combobox(detail_frame, values=('Male', 'Female'), font=('times new roman', 16, 'bold'), width=18, state='readonly')
+    empid_entry = Entry(detail_frame, font=('times new roman', 18, 'bold'), bg='lightyellow')
+    name_entry = Entry(detail_frame, font=('times new roman', 18, 'bold'), bg='lightyellow')
+    email_entry = Entry(detail_frame, font=('times new roman', 18, 'bold'), bg='lightyellow')
+    gender_combobox = ttk.Combobox(detail_frame, values=('Male', 'Female'), font=('times new roman', 18, 'bold'), width=18, state='readonly')
     gender_combobox.set('Select Gender')
-    dob_date_entry = DateEntry(detail_frame, width=18, font=('times new roman', 16, 'bold'), state='readonly', date_pattern='dd/mm/yyyy', bg='white')
-    number_entry = Entry(detail_frame, font=('times new roman', 16, 'bold'), bg='lightyellow')
-    salary_entry = Entry(detail_frame, font=('times new roman', 16, 'bold'), bg='lightyellow')
-    address_text = Text(detail_frame, width=20, height=3, font=('times new roman', 16, 'bold'), bg='lightyellow')
-    usertype_combobox = ttk.Combobox(detail_frame, values=('Admin', 'Employee'), font=('times new roman', 16, 'bold'), width=18, state='readonly')
+    dob_date_entry = DateEntry(detail_frame, width=18, font=('times new roman', 18, 'bold'), state='readonly', date_pattern='dd/mm/yyyy', bg='white')
+    number_entry = Entry(detail_frame, font=('times new roman', 18, 'bold'), bg='lightyellow')
+    salary_entry = Entry(detail_frame, font=('times new roman', 18, 'bold'), bg='lightyellow')
+    address_text = Text(detail_frame, width=20, height=3, font=('times new roman', 18, 'bold'), bg='lightyellow')
+    usertype_combobox = ttk.Combobox(detail_frame, values=('Admin', 'Employee'), font=('times new roman', 18, 'bold'), width=18, state='readonly')
     usertype_combobox.set('Employee Type')
-    password_entry = Entry(detail_frame, font=('times new roman', 16, 'bold'), bg='lightyellow', show='*')
+    password_entry = Entry(detail_frame, font=('times new roman', 18, 'bold'), bg='lightyellow', show='*')
 
     labels = ['Employee Id', 'Name', 'Email', 'Gender', 'Date of Birth', 'Phone Number', 'Salary', 'Address', 'User type', 'Password']
     entries = [empid_entry, name_entry, email_entry, gender_combobox, dob_date_entry, number_entry,
-            salary_entry, address_text, usertype_combobox, password_entry]
+    salary_entry, address_text, usertype_combobox, password_entry]
     positions = [(0, 0), (0, 2), (0, 4), (1, 0), (1, 2), (1, 4), (2, 0), (2, 2), (2, 4), (3, 0)]
 
     for label, pos in zip(labels, positions):
@@ -164,15 +164,7 @@ def employee_form(window):
     button_frame = Frame(employee_frame, bg='white')
     button_frame.place(x=400, y=530)
 
-    Button(button_frame, text='Add', font=('times new roman', 12), width=10, cursor='hand2', fg='white', bg='#0f4d7d',
-        command=lambda: add_employee(empid_entry.get(), name_entry.get(), gender_combobox.get(),
-                                        email_entry.get(), number_entry.get(), dob_date_entry.get(),
-                                        salary_entry.get(), address_text.get(1.0, END), usertype_combobox.get(),
-                                        password_entry.get())).grid(row=0, column=0, padx=20)
-
+    Button(button_frame, text='Add', font=('times new roman', 12), width=10, cursor='hand2', fg='white', bg='#0f4d7d',command=lambda: add_employee(empid_entry.get(), name_entry.get(), gender_combobox.get(),email_entry.get(),number_entry.get(), dob_date_entry.get(),salary_entry.get(), address_text.get(1.0, END), usertype_combobox.get(),password_entry.get())).grid(row=0, column=0, padx=20)
     Button(button_frame, text='Update', font=('times new roman', 12), width=10, cursor='hand2', fg='white', bg='#0f4d7d').grid(row=0, column=1, padx=20)
     Button(button_frame, text='Delete', font=('times new roman', 12), width=10, cursor='hand2', fg='white', bg='#0f4d7d').grid(row=0, column=2, padx=20)
-    Button(button_frame, text='Clear', font=('times new roman', 12), width=10, cursor='hand2', fg='white', bg='#0f4d7d',
-        command=lambda: clear_fields(empid_entry, name_entry, gender_combobox, email_entry, number_entry,
-                                        dob_date_entry, salary_entry, address_text, usertype_combobox,
-                                        password_entry)).grid(row=0, column=3, padx=20)
+    Button(button_frame, text='Clear', font=('times new roman', 12), width=10, cursor='hand2', fg='white', bg='#0f4d7d',command=lambda: clear_fields(empid_entry, name_entry, gender_combobox, email_entry, number_entry,dob_date_entry, salary_entry, address_text, usertype_combobox,password_entry)).grid(row=0, column=3, padx=20)
