@@ -90,7 +90,7 @@ def treeview_data():
     employee_treeview.delete(*employee_treeview.get_children())
 
     for record in employee_records:
-        # Mask the password with asterisks (same length as original password)
+        #! Mask the password with asterisks (same length as original password)
         masked_record = list(record)
         masked_record[9] = '•' * len(masked_record[9])  # Password is at index 9
         employee_treeview.insert('', END, values=masked_record)
@@ -115,8 +115,7 @@ def add_employee(empid, name, gender, email, number, dob, salary, address, usert
         except sqlite3.IntegrityError:
             messagebox.showerror('Error', 'Employee ID must be unique')
 
-def clear_fields(empid_entry, name_entry, gender_combobox, email_entry, number_entry, dob_date_entry,salary_entry,
-    address_text,usertype_combobox,  password_entry):
+def clear_fields(empid_entry, name_entry, gender_combobox, email_entry, number_entry, dob_date_entry,salary_entry,address_text,usertype_combobox,password_entry):
     empid_entry.delete(0, END)
     name_entry.delete(0, END)
     gender_combobox.set('Select Gender')
