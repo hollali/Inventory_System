@@ -5,6 +5,7 @@ from datetime import date
 from tkinter import messagebox
 import pymysql
 import sqlite3
+
 #! Function to connect to the MYSQL database
 """
 def connect_database():
@@ -54,6 +55,7 @@ def clear_fields(empid_entry,name_entry,email_entry,dob_date_entry,gender_combob
     salary_entry.delete(0,END)
     password_entry.delete(0,END)        
 """
+
 #! Function to connect to the SQL LITE database
 def connect_database():
     try:
