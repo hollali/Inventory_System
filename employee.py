@@ -96,8 +96,8 @@ def treeview_data():
         employee_treeview.insert('', END, values=masked_record)
 
 
-def add_employee(empid, name, gender, email, number, dob, salary, address, usertype, password):
-    if (empid == '' or name == ''  or gender == 'Select Gender' or email == '' or number == '' or dob == '' 
+def add_employee(empid, name,  email, number,gender, dob, salary, address, usertype, password):
+    if (empid == '' or name == '' or email == '' or number == '' or gender == 'Select Gender' or dob == '' 
             or salary == '' or address == '\n' or usertype == 'Employee Type' or password == ''):
         messagebox.showerror('Error', 'All fields are required')
     else:
@@ -108,20 +108,20 @@ def add_employee(empid, name, gender, email, number, dob, salary, address, usert
             cursor.execute('''
                 INSERT INTO employee_data 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (empid, name, gender, email, number, dob, salary, address, usertype, password))
+            ''', (empid, name, email, number,gender, dob, salary, address, usertype, password))
             connection.commit()
             treeview_data()
             messagebox.showinfo('Success', 'Data inserted successfully')
         except sqlite3.IntegrityError:
             messagebox.showerror('Error', 'Employee ID must be unique')
 
-def clear_fields(empid_entry, name_entry, gender_combobox, email_entry, number_entry, dob_date_entry,salary_entry,address_text,usertype_combobox,password_entry):
+def clear_fields(empid_entry, name_entry,email_entry, number_entry,dob_date_entry,gender_combobox,salary_entry,address_text,usertype_combobox,password_entry):
     empid_entry.delete(0, END)
     name_entry.delete(0, END)
-    gender_combobox.set('Select Gender')
     email_entry.delete(0, END)
     number_entry.delete(0, END)
-    dob_date_entry.delete(0, END)  # fixed for sqlite (delete text, not date)
+    dob_date_entry.delete(0, END)
+    gender_combobox.set('Select Gender')# fixed for sqlite (delete text, not date)
     salary_entry.delete(0, END)
     address_text.delete(1.0, END)
     usertype_combobox.set('Employee Type')  # fix: use set() not delete()
