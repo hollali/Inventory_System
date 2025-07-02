@@ -122,7 +122,7 @@ def clear_fields(empid_entry, name_entry,email_entry, number_entry,dob_date_entr
     name_entry.delete(0, END)
     email_entry.delete(0, END)
     number_entry.delete(0, END)
-    dob_date_entry.delete(0, END)
+    dob_date_entry.set('0', END)  # fixed for sqlite (delete text, not date)
     gender_combobox.set('Select Gender')# fixed for sqlite (delete text, not date)
     salary_entry.delete(0, END)
     address_text.delete(1.0, END)
