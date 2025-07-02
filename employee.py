@@ -253,7 +253,7 @@ def employee_form(window):
     button_frame=Frame(employee_frame,bg='white')
     button_frame.place(x=400,y=530)
 
-    add_button=Button(button_frame,text='Add',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:add_employee(empid_entry.get(),name_entry.get(),gender_combobox.get(),email_entry.get(),number_entry.get(),dob_date_entry.get(),salary_entry.get(),address_text.get(1.0,END),usertype_combobox.get(),password_entry.get()))
+    add_button=Button(button_frame,text='Add',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:add_employee(empid_entry.get(),name_entry.get(),email_entry.get(),number_entry.get(),dob_date_entry.get(),gender_combobox.get(),salary_entry.get(),address_text.get(1.0,END),usertype_combobox.get(),password_entry.get()))
     add_button.grid(row=0,column=0,padx=20)
 
     update_button=Button(button_frame,text='Update',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
