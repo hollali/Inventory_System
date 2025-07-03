@@ -117,12 +117,12 @@ def add_employee(empid, name,  email, number,gender, dob, salary, address, usert
         except sqlite3.IntegrityError:
             messagebox.showerror('Error', 'Employee ID must be unique')
 
-def clear_fields(empid_entry, name_entry,email_entry, number_entry,dob_date_entry,gender_combobox,salary_entry,address_text,usertype_combobox,password_entry):
+def clear_fields(empid_entry,name_entry,email_entry,number_entry,dob_date_entry,gender_combobox,salary_entry,address_text,usertype_combobox,password_entry):
     empid_entry.delete(0, END)
     name_entry.delete(0, END)
     email_entry.delete(0, END)
     number_entry.delete(0, END)
-    dob_date_entry.set('0', END)  # fixed for sqlite (delete text, not date)
+    dob_date_entry.set_date(date.today())  # fixed for sqlite (delete text, not date)
     gender_combobox.set('Select Gender')# fixed for sqlite (delete text, not date)
     salary_entry.delete(0, END)
     address_text.delete(1.0, END)
@@ -262,5 +262,5 @@ def employee_form(window):
     delete_button=Button(button_frame,text='Delete',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
     delete_button.grid(row=0,column=2,padx=20)
 
-    clear_button=Button(button_frame,text='Clear',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:clear_fields(empid_entry,name_entry,email_entry,dob_date_entry,gender_combobox,number_entry,address_text,usertype_combobox,salary_entry,password_entry))
+    clear_button=Button(button_frame,text='Clear',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:clear_fields(empid_entry,name_entry,email_entry,number_entry,dob_date_entry,gender_combobox,salary_entry,address_text,usertype_combobox,password_entry))
     clear_button.grid(row=0,column=3,padx=20)
