@@ -3,7 +3,7 @@ from tkinter import ttk
 from tkcalendar import DateEntry
 from datetime import date
 from tkinter import messagebox
-import pymysql
+#import pymysql
 import sqlite3
 
 #! Function to connect to the MYSQL database
