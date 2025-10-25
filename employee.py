@@ -41,7 +41,7 @@ def add_employee(empid,name,gender,email,number,dob,salary,address,usertype,pass
         cursor.execute('INSERT INTO employee_data VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(empid,name,gender,email,number,dob,salary,address,usertype,password))
         connection.commit()
         treeview_data()
-        messagebox.showinfo('Success','Data is inserted Sucessfully')   
+        messagebox.showinfo('Success','Data is inserted Successfully')   
 
 def clear_fields(empid_entry,name_entry,email_entry,dob_date_entry,gender_combobox,number_entry,address_text,usertype_combobox,salary_entry,password_entry):
     empid_entry.delete(0,END)
