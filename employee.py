@@ -160,6 +160,33 @@ def employee_form(window):
 
     show_button=Button(search_frame,text='Show All',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d')
     show_button.grid(row=0,column=3)
+    
+    
+    # --- Add bordered style for Treeview (Excel-like grid lines)
+    style = ttk.Style()
+    style.theme_use("clam")
+
+    style.configure(
+        "Treeview",
+        background="white",
+        foreground="black",
+        rowheight=25,
+        fieldbackground="white",
+        bordercolor="#d0d0d0",
+        borderwidth=1,
+        relief="solid"
+    )
+
+    style.configure(
+        "Treeview.Heading",
+        font=("times new roman", 11, "bold"),
+        background="#f2f2f2",
+        bordercolor="#d0d0d0",
+        borderwidth=1,
+        relief="solid"
+    )
+
+    style.map("Treeview", background=[("selected", "#cce5ff")])
 
     horizontal_scrollbar=Scrollbar(top_frame,orient=HORIZONTAL)
     vertical_scrollbar=Scrollbar(top_frame,orient=VERTICAL)
