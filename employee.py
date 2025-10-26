@@ -132,7 +132,7 @@ def clear_fields(empid_entry,name_entry,email_entry,number_entry,dob_date_entry,
 #!Function Port
 def employee_form(window):
     global back_image,employee_treeview
-    employee_frame=Frame(window,width=1470,height=567,bg='white')
+    employee_frame=Frame(window,width=1670,height=567,bg='white')
     employee_frame.place(x=200,y=100)
 
     heading_label=Label(employee_frame,text='Employee Details',font=('times new roman',16,'bold'),bg='#0f4d7d',fg='white')
@@ -183,13 +183,13 @@ def employee_form(window):
     employee_treeview.heading('password',text='Password')
 
     employee_treeview.column('empid',width=100)
-    employee_treeview.column('name',width=220)
-    employee_treeview.column('email',width=240)
+    employee_treeview.column('name',width=260)
+    employee_treeview.column('email',width=280)
     employee_treeview.column('number',width=180)
     employee_treeview.column('dob',width=120) 
     employee_treeview.column('gender',width=100)
     employee_treeview.column('salary',width=140)
-    employee_treeview.column('address',width=140)
+    employee_treeview.column('address',width=160)
     employee_treeview.column('usertype',width=140)
     employee_treeview.column('password',width=100)
 

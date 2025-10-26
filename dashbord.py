@@ -6,7 +6,7 @@ from employee import employee_form
 window=Tk()
 
 window.title("Inventory System Dashboard")
-window.geometry('1670x850+0+0')
+window.geometry('1920x1080+0+0')
 window.resizable(0,0)
 window.config(bg='white')
 
@@ -21,7 +21,7 @@ subtitleLabel=Label(window,text='Welcome, Admin\t\t Date: 16/08/2024\t\t Time: 1
 subtitleLabel.place(x=0,y=70,relwidth=1)
 
 leftFrame=Frame(window,bg='white')
-leftFrame.place(x=0,y=102,width=200,height=650)
+leftFrame.place(x=0,y=102,width=200,height=850)
 
 logoImage=PhotoImage(file='./images/logo.png')
 imageLabel=Label(leftFrame,image=logoImage)
