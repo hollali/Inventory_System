@@ -132,7 +132,7 @@ def clear_fields(empid_entry,name_entry,email_entry,number_entry,dob_date_entry,
 #!Function Port
 def employee_form(window):
     global back_image,employee_treeview
-    employee_frame=Frame(window,width=1670,height=567,bg='white')
+    employee_frame=Frame(window,width=1710,height=700,bg='white')
     employee_frame.place(x=200,y=100)
 
     heading_label=Label(employee_frame,text='Employee Details',font=('times new roman',16,'bold'),bg='#0f4d7d',fg='white')
@@ -172,7 +172,7 @@ def employee_form(window):
         foreground="black",
         rowheight=25,
         fieldbackground="white",
-        bordercolor="#d0d0d0",
+        bordercolor="gray",
         borderwidth=1,
         relief="solid"
     )
@@ -210,11 +210,11 @@ def employee_form(window):
     employee_treeview.heading('password',text='Password')
 
     employee_treeview.column('empid',width=100)
-    employee_treeview.column('name',width=260)
+    employee_treeview.column('name',width=280)
     employee_treeview.column('email',width=280)
-    employee_treeview.column('number',width=180)
-    employee_treeview.column('dob',width=120) 
-    employee_treeview.column('gender',width=100)
+    employee_treeview.column('number',width=190)
+    employee_treeview.column('dob',width=130) 
+    employee_treeview.column('gender',width=120)
     employee_treeview.column('salary',width=140)
     employee_treeview.column('address',width=160)
     employee_treeview.column('usertype',width=140)
@@ -223,7 +223,7 @@ def employee_form(window):
     treeview_data() 
 
     detail_frame=Frame(employee_frame,bg='white')
-    detail_frame.place(x=50,y=300)
+    detail_frame.place(x=50,y=400)
 
     empid_label=Label(detail_frame,text="Employee Id",font=('times new roman',16,'bold'),bg='white')
     empid_label.grid(row=0,column=0,padx=20,pady=10)
@@ -278,7 +278,7 @@ def employee_form(window):
     password_entry.grid(row=3,column=1,padx=20,pady=10)    
 
     button_frame=Frame(employee_frame,bg='white')
-    button_frame.place(x=400,y=530)
+    button_frame.place(x=400,y=630)
 
     add_button=Button(button_frame,text='Add',font=('times new roman',12),width=10,cursor='hand2',fg='white',bg='#0f4d7d',command=lambda:add_employee(empid_entry.get(),name_entry.get(),email_entry.get(),number_entry.get(),dob_date_entry.get(),gender_combobox.get(),salary_entry.get(),address_text.get(1.0,END),usertype_combobox.get(),password_entry.get()))
     add_button.grid(row=0,column=0,padx=20)
