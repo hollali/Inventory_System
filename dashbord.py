@@ -1,5 +1,6 @@
 from tkinter import *
 from employee import employee_form
+import datetime
 
 
 #*GUI PORT
@@ -17,8 +18,20 @@ titleLabel.place(x=0,y=0,relwidth=1)
 logoutButton=Button(window,text='Logout',font=('times new roman',20,'bold'),fg='#010c48',bg='white')
 logoutButton.place(x=1720,y=10)
 
-subtitleLabel=Label(window,text='Welcome, Admin\t\t Date: 16/08/2024\t\t Time: 12:36:17 pm',font=('times new roman',15),bg='#4d636d')
-subtitleLabel.place(x=0,y=70,relwidth=1)
+# Create a subtitle label (initially empty)
+subtitleLabel = Label(window, font=('times new roman', 15), bg='#4d636d', fg='white')
+subtitleLabel.place(x=0, y=70, relwidth=1)
+
+# Function to update date and time dynamically
+def update_datetime():
+    now = datetime.datetime.now()
+    current_date = now.strftime("%d/%m/%Y")
+    current_time = now.strftime("%I:%M:%S %p")
+    subtitleLabel.config(text=f"Welcome, Admin\t\t Date: {current_date}\t\t Time: {current_time}")
+    subtitleLabel.after(1000, update_datetime)  # refresh every 1 second
+
+update_datetime()  # start the auto-update loop
+
 
 leftFrame=Frame(window,bg='white')
 leftFrame.place(x=0,y=102,width=200,height=750)
