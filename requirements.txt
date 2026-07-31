@@ -1,0 +1,6 @@
+# Runtime dependencies
+tkcalendar==1.6.1
+pymysql==1.2.0
+
+# Packaging (run once when building a standalone executable)
+# pyinstaller==6.*

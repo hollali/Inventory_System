@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+inventory_system.db
+inventory_system.db-journal
+*.log
