@@ -1,17 +1,14 @@
-import os
-import sys
 import tkinter as tk
 import tkinter.messagebox as tkmb
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+import testbase
+
+import login
+import dashboard
 
 tkmb.showerror = lambda t, m: print('ERR:', m)
 tkmb.showinfo = lambda t, m: print('INFO:', m)
 tkmb.askyesno = lambda t, m: True
-
-import login
-import dashbord
 
 
 def walk(w, acc):
@@ -35,7 +32,7 @@ result = {}
 
 def on_success(user):
     result['user'] = user
-    dashbord.build_dashboard(root, user)
+    dashboard.build_dashboard(root, user)
     result['built'] = True
 
 
@@ -66,7 +63,7 @@ for expected in ('Employees', 'Suppliers', 'Categories', 'Products', 'Sales', 'R
     assert expected in menu_admin, menu_admin
 print('admin sees all menus -> OK')
 
-dashbord.build_dashboard(root, {'empid': 2, 'name': 'Ama Addai', 'usertype': 'Employee'})
+dashboard.build_dashboard(root, {'empid': 2, 'name': 'Ama Addai', 'usertype': 'Employee'})
 root.update()
 menu_emp = [str(w.cget('text')) for w in find(root, 'Button')]
 assert 'Sales' in menu_emp, menu_emp
@@ -74,6 +71,12 @@ assert 'Logout' in menu_emp, menu_emp
 for hidden in ('Employees', 'Suppliers', 'Categories', 'Products'):
     assert hidden not in menu_emp, menu_emp
 print('employee sees only Sales -> OK')
+
+for _ in range(login.FAIL_LIMIT):
+    assert login.authenticate('2', 'wrong') is None
+assert login.lockout_remaining('2') > 0, 'account should be locked'
+assert login.authenticate('2', 'wrong') is None, 'locked account must reject even correct-looking attempts'
+print('lockout after repeated failures -> OK')
 
 print('ALL LOGIN TESTS PASSED')
 root.destroy()

@@ -1,4 +1,5 @@
 import crud
+import movements
 from layout import export_to_csv
 
 PRODUCT_SPEC = {
@@ -8,17 +9,19 @@ PRODUCT_SPEC = {
     'title': 'Product Details',
     'frame_global': 'product_frame',
     'table_columns': ['product_id', 'name', 'category_id', 'supplier_id', 'price',
-                      'quantity', 'description'],
+                      'cost_price', 'quantity', 'reorder_level', 'description'],
     'columns': [
-        ('product_id', 'Product Id', 100), ('name', 'Name', 250),
-        ('category_name', 'Category', 180), ('supplier_name', 'Supplier', 180),
-        ('price', 'Price', 120), ('quantity', 'Quantity', 100), ('description', 'Description', 400),
+        ('product_id', 'Product Id', 100), ('name', 'Name', 220),
+        ('category_name', 'Category', 150), ('supplier_name', 'Supplier', 150),
+        ('price', 'Price', 110), ('cost_price', 'Cost', 110), ('quantity', 'Quantity', 90),
+        ('reorder_level', 'Reorder', 90), ('description', 'Description', 350),
     ],
     'join': ('LEFT JOIN categories ON products.category_id = categories.category_id '
              'LEFT JOIN suppliers ON products.supplier_id = suppliers.supplier_id'),
     'select_columns': ['products.product_id', 'products.name',
                        'categories.name AS category_name', 'suppliers.name AS supplier_name',
-                       'products.price', 'products.quantity', 'products.description'],
+                       'products.price', 'products.cost_price',
+                       'products.quantity', 'products.reorder_level', 'products.description'],
     'search': [('Id', 'products.product_id'), ('Name', 'products.name'),
                ('Category', 'categories.name')],
     'unique_msg': 'Product ID must be unique',
@@ -38,14 +41,20 @@ PRODUCT_SPEC = {
         {'key': 'supplier_id', 'label': 'Supplier', 'kind': 'source', 'pos': (1, 0),
          'source': ('suppliers', 'supplier_id', 'name'), 'placeholder': 'Select Supplier',
          'display_key': 'supplier_name', 'required': True, 'msg': 'Please select a supplier'},
-        {'key': 'price', 'label': 'Price', 'kind': 'entry', 'pos': (1, 2), 'required': True,
+        {'key': 'price', 'label': 'Selling Price', 'kind': 'entry', 'pos': (1, 2), 'required': True,
          'validate': 'number', 'positive': True, 'msg': 'Price must be a positive number',
          'store': 'float', 'format': 'money'},
-        {'key': 'quantity', 'label': 'Quantity', 'kind': 'entry', 'pos': (1, 4), 'required': True,
+        {'key': 'cost_price', 'label': 'Cost Price', 'kind': 'entry', 'pos': (1, 4),
+         'required': False, 'validate': 'number', 'positive': True, 'msg': 'Cost must be a number',
+         'store': 'float', 'format': 'money'},
+        {'key': 'quantity', 'label': 'Quantity', 'kind': 'entry', 'pos': (2, 0), 'required': True,
          'validate': 'positive_int', 'msg': 'Quantity must be a whole number',
          'store': 'int', 'format': 'int'},
-        {'key': 'description', 'label': 'Description', 'kind': 'text', 'pos': (2, 0),
-         'width': 60, 'height': 3, 'colspan': 3, 'required': True},
+        {'key': 'reorder_level', 'label': 'Reorder Level', 'kind': 'entry', 'pos': (2, 2),
+         'required': False, 'validate': 'positive_int', 'msg': 'Reorder level must be a whole number',
+         'store': 'int', 'format': 'int'},
+        {'key': 'description', 'label': 'Description', 'kind': 'text', 'pos': (2, 4),
+         'width': 60, 'height': 3, 'colspan': 2, 'required': True},
     ],
 }
 
@@ -54,14 +63,28 @@ def add_record(data):
     cleaned = crud.validate_data(PRODUCT_SPEC, data, 'add')
     if cleaned is None:
         return False
-    return crud.insert_row(PRODUCT_SPEC, cleaned)
+    if not crud.insert_row(PRODUCT_SPEC, cleaned):
+        return False
+    if cleaned.get('quantity'):
+        movements.log_movement_committed(cleaned['product_id'], cleaned['quantity'], 'initial')
+    return True
 
 
 def update_record(data):
     cleaned = crud.validate_data(PRODUCT_SPEC, data, 'update')
     if cleaned is None:
         return False
-    return crud.update_row(PRODUCT_SPEC, cleaned)
+    old = crud.query_one('SELECT quantity AS n FROM products WHERE product_id = ?',
+                         (cleaned['product_id'],))
+    if old is None:
+        crud.messagebox.showerror('Error', f"No record found with that {PRODUCT_SPEC['pk_label']}")
+        return False
+    if not crud.update_row(PRODUCT_SPEC, cleaned):
+        return False
+    delta = (cleaned.get('quantity') or 0) - (old['n'] or 0)
+    if delta:
+        movements.log_movement_committed(cleaned['product_id'], delta, 'adjustment')
+    return True
 
 
 def delete_record(product_id):
@@ -108,10 +131,12 @@ def get_count():
 def export_product_csv():
     rows = crud.fetch_rows(PRODUCT_SPEC)
     records = [tuple(row[key] for key in ('product_id', 'name', 'category_name',
-                                          'supplier_name', 'price', 'quantity', 'description'))
+                                          'supplier_name', 'price', 'cost_price',
+                                          'quantity', 'reorder_level', 'description'))
                for row in rows]
     export_to_csv(None, ('Product Id', 'Name', 'Category', 'Supplier', 'Price',
-                         'Quantity', 'Description'), records, 'products.csv')
+                         'Cost Price', 'Quantity', 'Reorder Level', 'Description'),
+                  records, 'products.csv')
 
 
 product_treeview = None

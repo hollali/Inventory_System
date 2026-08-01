@@ -8,6 +8,6 @@ pyinstaller --noconfirm --onefile --windowed \
   --add-data "images:images" \
   --add-data "config.ini:." \
   --name "InventorySystem" \
-  dashbord.py
+  dashboard.py
 
 echo "Build complete: dist/InventorySystem"

@@ -2,5 +2,8 @@
 tkcalendar==1.6.1
 pymysql==1.2.0
 
+# Optional: dashboard charts (the app falls back to a message if absent)
+# matplotlib
+
 # Packaging (run once when building a standalone executable)
 # pyinstaller==6.*

@@ -10,6 +10,9 @@ import suppliers
 import categories
 import products
 import sales
+import customers
+import returns
+import purchases
 import reports
 import datetime
 from layout import (setup_window, scale, px, py, pw, ph, fs, ToolTip, resource_path,
@@ -27,6 +30,9 @@ def build_dashboard(window, user):
         widget.destroy()
 
     from login import show_login
+
+    import movements
+    movements.set_current_user(user)
 
     is_admin = (user or {}).get('usertype') == 'Admin'
 
@@ -94,6 +100,7 @@ def build_dashboard(window, user):
         'category': PhotoImage(file=resource_path('images/category.png')),
         'product': PhotoImage(file=resource_path('images/product.png')),
         'sales': PhotoImage(file=resource_path('images/sales.png')),
+        'customers': PhotoImage(file=resource_path('images/employee (1).png')),
         'reports': PhotoImage(file=resource_path('images/bill_logo.png')),
         'exit': PhotoImage(file=resource_path('images/exit.png')),
     }
@@ -109,8 +116,19 @@ def build_dashboard(window, user):
                     lambda: product_form(window, on_close=update_counts), 'Manage products')
     menu_button(left_frame, icons['sales'], 'Sales',
                 lambda: sale_form(window, on_close=update_counts), 'Record sales')
+    menu_button(left_frame, icons['customers'], 'Customers',
+                lambda: customers.customers_form(window, on_close=update_counts),
+                'Manage customers and track credit')
+    menu_button(left_frame, icons['sales'], 'Returns',
+                lambda: returns.return_form(window, on_close=update_counts),
+                'Record product returns')
+    menu_button(left_frame, icons['supplier'], 'Purchases',
+                lambda: purchases.purchase_form(window, on_close=update_counts),
+                'Receive stock from suppliers')
     menu_button(left_frame, icons['reports'], 'Reports',
                 lambda: reports.show_reports_hub(window), 'Low stock and sales reports')
+    menu_button(left_frame, icons['reports'], 'Charts',
+                lambda: reports.show_charts(window), 'Sales charts (matplotlib)')
     menu_button(left_frame, icons['exit'], 'Exit', lambda: _quit(window), 'Quit the application')
 
     def stat_card(x, y, color, icon, title):
@@ -148,7 +166,7 @@ def build_dashboard(window, user):
             total_sup_count_label.config(text=suppliers.get_count())
             total_cat_count_label.config(text=categories.get_count())
             total_products_count_label.config(text=products.get_count())
-            total_sales_count_label.config(text=sales.get_count())
+            total_sales_count_label.config(text=sales.get_order_count())
             low_stock_count_label.config(text=reports.low_stock_count())
         except Exception:
             pass
@@ -157,12 +175,34 @@ def build_dashboard(window, user):
 
 
 def main():
+    from app_log import logger, install_tk_hook, setup_logging
+    from layout import acquire_single_instance
+    from database import backup_if_due
+
+    setup_logging()
+
+    if acquire_single_instance() is None:
+        messagebox.showerror('Already Running',
+                             'The Inventory System is already open. '
+                             'Only one instance may run at a time.')
+        return
+
     window = Tk()
+    install_tk_hook(window)
     setup_window(window, 'Inventory System Dashboard')
 
     icon_image = PhotoImage(file=resource_path('images/icon.png'))
     window.iconphoto(True, icon_image)
     window.icon_image = icon_image
+
+    def schedule_backup():
+        try:
+            backup_if_due()
+        except Exception:
+            logger.exception('Scheduled backup failed')
+        window.after(6 * 3600 * 1000, schedule_backup)
+
+    schedule_backup()
 
     from login import show_login
     show_login(window, lambda user: build_dashboard(window, user))

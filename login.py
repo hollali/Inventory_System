@@ -1,22 +1,83 @@
+import time
 from tkinter import *
 from tkinter import messagebox
 
-from database import query_one, verify_password
+from database import (commit, execute, hash_password, password_needs_rehash, query_one,
+                      verify_password)
 from layout import (FONT_FAMILY, PRIMARY, PRIMARY_DARK, ACCENT, ACCENT_HOVER,
                     DANGER, DANGER_HOVER, FIELD_BG, fs, px, py, resource_path)
+
+FAIL_LIMIT = 5
+LOCK_SECONDS = 300
+_unknown_failures = {}
+
+
+def _stored_remaining(locked_until):
+    if not locked_until:
+        return 0
+    try:
+        remaining = float(locked_until) - time.time()
+    except (TypeError, ValueError):
+        return 0
+    return max(0, int(remaining) + 1)
+
+
+def lockout_remaining(employee_id):
+    employee_id = str(employee_id or '').strip()
+    rec = _unknown_failures.get(employee_id)
+    if rec and rec.get('locked_until'):
+        remaining = rec['locked_until'] - time.time()
+        if remaining > 0:
+            return max(0, int(remaining) + 1)
+    row = query_one('SELECT locked_until FROM employee_data WHERE empid = ?', (employee_id,))
+    if not row:
+        return 0
+    return _stored_remaining(row['locked_until'])
+
+
+def _register_failure(employee_id):
+    row = query_one('SELECT failed_attempts FROM employee_data WHERE empid = ?', (employee_id,))
+    if row is None:
+        rec = _unknown_failures.setdefault(employee_id, {'count': 0, 'locked_until': None})
+        rec['count'] += 1
+        if rec['count'] >= FAIL_LIMIT:
+            rec['locked_until'] = time.time() + LOCK_SECONDS
+            rec['count'] = 0
+        return
+    attempts = (row['failed_attempts'] or 0) + 1
+    locked_until = time.time() + LOCK_SECONDS if attempts >= FAIL_LIMIT else 0
+    execute('UPDATE employee_data SET failed_attempts = ?, locked_until = ? WHERE empid = ?',
+            (0 if locked_until else attempts, locked_until or None, employee_id))
+    commit()
+
+
+def _reset_failures(employee_id):
+    _unknown_failures.pop(employee_id, None)
+    execute('UPDATE employee_data SET failed_attempts = 0, locked_until = NULL WHERE empid = ?',
+            (employee_id,))
+    commit()
 
 
 def authenticate(employee_id, password):
     employee_id = str(employee_id or '').strip()
     if not employee_id or not password:
         return None
+    if lockout_remaining(employee_id):
+        return None
     row = query_one(
         'SELECT empid, name, usertype, password FROM employee_data WHERE empid = ?',
         (employee_id,))
     if not row:
+        _register_failure(employee_id)
         return None
     if not verify_password(password, row['password']):
+        _register_failure(employee_id)
         return None
+    _reset_failures(employee_id)
+    if password_needs_rehash(row['password']):
+        execute('UPDATE employee_data SET password = ? WHERE empid = ?',
+                (hash_password(password), employee_id))
+        commit()
     return {'empid': row['empid'], 'name': row['name'], 'usertype': row['usertype']}
 
 
@@ -58,7 +119,14 @@ def show_login(window, on_success):
             return
         user = authenticate(employee_id, password)
         if user is None:
-            messagebox.showerror('Login Failed', 'Invalid Employee ID or password')
+            remaining = lockout_remaining(employee_id)
+            if remaining:
+                mins, secs = divmod(remaining, 60)
+                messagebox.showerror(
+                    'Account Locked',
+                    f'Too many failed attempts. Try again in {mins} min {secs} sec.')
+            else:
+                messagebox.showerror('Login Failed', 'Invalid Employee ID or password')
             password_entry.delete(0, END)
             return
         login_frame.destroy()

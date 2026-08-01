@@ -3,10 +3,17 @@ import hashlib
 import os
 import shutil
 import sqlite3
+import time
 from datetime import datetime
+
+from app_log import logger
 
 CONFIG_FILE = 'config.ini'
 PASSWORD_SALT = 'inventory-system-v1'
+PASSWORD_ITERATIONS = 600_000
+_HASH_PREFIX = 'pbkdf2_sha256$'
+BACKUP_DIR = 'backups'
+BACKUP_KEEP = 20
 
 _EMPLOYEE_TABLE_SQL = '''
 CREATE TABLE IF NOT EXISTS employee_data (
@@ -46,7 +53,9 @@ CREATE TABLE IF NOT EXISTS products (
     category_id INTEGER,
     supplier_id INTEGER,
     price REAL CHECK (price >= 0),
+    cost_price REAL DEFAULT 0 CHECK (cost_price >= 0),
     quantity INTEGER DEFAULT 0 CHECK (quantity >= 0),
+    reorder_level INTEGER DEFAULT 0 CHECK (reorder_level >= 0),
     description TEXT,
     FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE SET NULL
@@ -60,9 +69,72 @@ CREATE TABLE IF NOT EXISTS sales (
     total REAL NOT NULL CHECK (total >= 0),
     sale_date TEXT NOT NULL,
     customer TEXT NOT NULL,
+    invoice_number TEXT,
+    payment_mode TEXT NOT NULL DEFAULT 'Cash',
+    customer_id INTEGER,
     FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE RESTRICT
 )''',
+    '''
+CREATE TABLE IF NOT EXISTS returns (
+    return_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sale_id INTEGER,
+    product_id INTEGER,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_price REAL NOT NULL CHECK (unit_price >= 0),
+    total REAL NOT NULL CHECK (total >= 0),
+    return_date TEXT NOT NULL,
+    customer TEXT,
+    invoice_number TEXT
+)''',
+    '''
+CREATE TABLE IF NOT EXISTS stock_movements (
+    movement_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER,
+    quantity_delta INTEGER NOT NULL,
+    reason TEXT NOT NULL,
+    reference_id INTEGER,
+    created_by INTEGER,
+    created_at TEXT NOT NULL
+)''',
+    '''
+CREATE TABLE IF NOT EXISTS purchases (
+    purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_number TEXT,
+    supplier_id INTEGER,
+    product_id INTEGER,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_cost REAL NOT NULL CHECK (unit_cost >= 0),
+    total REAL NOT NULL CHECK (total >= 0),
+    purchase_date TEXT NOT NULL,
+    payment_mode TEXT NOT NULL DEFAULT 'Cash',
+    note TEXT,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE RESTRICT,
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE RESTRICT
+)''',
+    '''
+CREATE TABLE IF NOT EXISTS customers (
+    customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(50),
+    email VARCHAR(255),
+    address TEXT,
+    credit_limit REAL DEFAULT 0 CHECK (credit_limit >= 0),
+    created_at TEXT
+)''',
+    '''
+CREATE TABLE IF NOT EXISTS credit_payments (
+    payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER,
+    amount REAL NOT NULL CHECK (amount >= 0),
+    payment_date TEXT NOT NULL,
+    note TEXT,
+    created_by INTEGER,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE RESTRICT
+)''',
 ]
+
+MIGRATION_VERSION = 7
 
 _connection = None
 _cursor = None
@@ -134,14 +206,75 @@ def _migrate_employee_data():
     _cursor.execute('DROP TABLE employee_data_old')
 
 
+def _copy_db_file(src_file, dst_file):
+    if engine() == 'sqlite':
+        src = _connection if _connection is not None else sqlite3.connect(src_file)
+        dst = sqlite3.connect(dst_file)
+        try:
+            src.backup(dst)
+        finally:
+            dst.close()
+            if src is not _connection:
+                src.close()
+    else:
+        shutil.copy2(src_file, dst_file)
+
+
 def _backup_database():
-    db_file = _read_config().get('database', 'db_file', fallback='inventory_system.db')
+    db_file = db_file_path()
     if not os.path.exists(db_file):
         return None
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     backup_file = f'{db_file}.backup_{timestamp}'
-    shutil.copy2(db_file, backup_file)
+    _copy_db_file(db_file, backup_file)
     return backup_file
+
+
+def db_file_path():
+    return os.environ.get('INVENTORY_DB_FILE') or _read_config().get(
+        'database', 'db_file', fallback='inventory_system.db')
+
+
+def _prune_backups(directory, prefix):
+    backups = []
+    if os.path.isdir(directory):
+        backups = [os.path.join(directory, name) for name in os.listdir(directory)
+                   if name.startswith(prefix)]
+    if len(backups) > BACKUP_KEEP:
+        for old in sorted(backups, key=os.path.getmtime)[:-BACKUP_KEEP]:
+            try:
+                os.remove(old)
+            except OSError:
+                logger.exception('Failed to remove old backup: %s', old)
+
+
+def backup_now():
+    src = db_file_path()
+    if not os.path.exists(src):
+        return None
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    dst = os.path.join(BACKUP_DIR, f'{os.path.basename(src)}.backup_{timestamp}')
+    _copy_db_file(src, dst)
+    logger.info('Database backup created: %s', dst)
+    _prune_backups(BACKUP_DIR, os.path.basename(src))
+    return dst
+
+
+def backup_if_due(max_age_days=1):
+    src = db_file_path()
+    if not os.path.exists(src):
+        return None
+    backups = []
+    if os.path.isdir(BACKUP_DIR):
+        prefix = os.path.basename(src)
+        backups = [os.path.join(BACKUP_DIR, name) for name in os.listdir(BACKUP_DIR)
+                   if name.startswith(prefix)]
+    if backups:
+        newest = max(os.path.getmtime(path) for path in backups)
+        if time.time() - newest < max_age_days * 86400:
+            return None
+    return backup_now()
 
 
 def migrate():
@@ -150,39 +283,101 @@ def migrate():
     _cursor.execute('PRAGMA user_version')
     version = _cursor.fetchone()
     version = dict(version)['user_version'] if version else 0
-    if version >= 1:
+    if version >= MIGRATION_VERSION:
         return
 
     _backup_database()
 
-    _cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='employee_data'")
-    if _cursor.fetchone():
-        columns = {row['name']: (row['type'] or '').upper()
-                   for row in _cursor.execute('PRAGMA table_info(employee_data)')}
-        if columns.get('salary') == 'TEXT':
-            _migrate_employee_data()
+    if version < 1:
+        _cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='employee_data'")
+        if _cursor.fetchone():
+            columns = {row['name']: (row['type'] or '').upper()
+                       for row in _cursor.execute('PRAGMA table_info(employee_data)')}
+            if columns.get('salary') == 'TEXT':
+                _migrate_employee_data()
 
-    for table, legacy in (('products', ('category', 'supplier')), ('sales', ('product',))):
-        _cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
-        if not _cursor.fetchone():
-            continue
-        columns = {row['name'] for row in _cursor.execute(f'PRAGMA table_info({table})')}
-        if any(column in columns for column in legacy):
-            count = _cursor.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
-            if count == 0:
-                _cursor.execute(f'DROP TABLE {table}')
-            else:
-                raise RuntimeError(
-                    f'Legacy table "{table}" has {count} rows that cannot be auto-migrated')
+        for table, legacy in (('products', ('category', 'supplier')), ('sales', ('product',))):
+            _cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
+            if not _cursor.fetchone():
+                continue
+            columns = {row['name'] for row in _cursor.execute(f'PRAGMA table_info({table})')}
+            if any(column in columns for column in legacy):
+                count = _cursor.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
+                if count == 0:
+                    _cursor.execute(f'DROP TABLE {table}')
+                else:
+                    raise RuntimeError(
+                        f'Legacy table "{table}" has {count} rows that cannot be auto-migrated')
 
-    _cursor.execute('PRAGMA user_version = 1')
+    if version < 3:
+        columns = {row['name'] for row in _cursor.execute('PRAGMA table_info(products)')}
+        if 'reorder_level' not in columns:
+            _cursor.execute('ALTER TABLE products ADD COLUMN reorder_level INTEGER DEFAULT 0')
+        if 'cost_price' not in columns:
+            _cursor.execute('ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0')
+
+    if version < 4:
+        columns = {row['name'] for row in _cursor.execute('PRAGMA table_info(sales)')}
+        if 'invoice_number' not in columns:
+            _cursor.execute('ALTER TABLE sales ADD COLUMN invoice_number TEXT')
+        if 'payment_mode' not in columns:
+            _cursor.execute("ALTER TABLE sales ADD COLUMN payment_mode TEXT NOT NULL DEFAULT 'Cash'")
+        rows = _cursor.execute('SELECT sale_id FROM sales ORDER BY sale_id').fetchall()
+        for index, row in enumerate(rows, 1):
+            _cursor.execute('UPDATE sales SET invoice_number = ? WHERE sale_id = ?',
+                            (f'INV-{index:05d}', row['sale_id']))
+
+    if version < 5:
+        columns = {row['name'] for row in _cursor.execute('PRAGMA table_info(purchases)')}
+        if 'payment_mode' not in columns:
+            _cursor.execute(
+                "ALTER TABLE purchases ADD COLUMN payment_mode TEXT NOT NULL DEFAULT 'Cash'")
+
+    if version < 6:
+        columns = {row['name'] for row in _cursor.execute('PRAGMA table_info(sales)')}
+        if 'customer_id' not in columns:
+            _cursor.execute('ALTER TABLE sales ADD COLUMN customer_id INTEGER')
+        names = [row['customer'] for row in _cursor.execute(
+            "SELECT DISTINCT customer FROM sales WHERE customer IS NOT NULL "
+            "AND TRIM(customer) != '' ORDER BY customer")]
+        for name in names:
+            _cursor.execute('INSERT OR IGNORE INTO customers (name, created_at) VALUES (?, ?)',
+                            (name, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            _cursor.execute(
+                'UPDATE sales SET customer_id = '
+                '(SELECT customer_id FROM customers WHERE name = ?) '
+                'WHERE customer = ? AND customer_id IS NULL', (name, name))
+
+    if version < 7:
+        columns = {row['name'] for row in _cursor.execute('PRAGMA table_info(employee_data)')}
+        if 'failed_attempts' not in columns:
+            _cursor.execute('ALTER TABLE employee_data ADD COLUMN failed_attempts INTEGER DEFAULT 0')
+        if 'locked_until' not in columns:
+            _cursor.execute('ALTER TABLE employee_data ADD COLUMN locked_until REAL')
+
+    _cursor.execute(f'PRAGMA user_version = {MIGRATION_VERSION}')
     _connection.commit()
+
+
+_INDEX_SQL = [
+    'CREATE INDEX IF NOT EXISTS idx_sales_product ON sales(product_id)',
+    'CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales(customer_id)',
+    'CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(sale_date)',
+    'CREATE INDEX IF NOT EXISTS idx_returns_sale ON returns(sale_id)',
+    'CREATE INDEX IF NOT EXISTS idx_movements_product ON stock_movements(product_id)',
+    'CREATE INDEX IF NOT EXISTS idx_purchases_product ON purchases(product_id)',
+    'CREATE INDEX IF NOT EXISTS idx_creditpay_customer ON credit_payments(customer_id)',
+]
 
 
 def _prepare_schema():
     ensure_tables()
     migrate()
     ensure_tables()
+    if engine() == 'sqlite':
+        for statement in _INDEX_SQL:
+            _cursor.execute(statement)
+        _connection.commit()
 
 
 def connect_database():
@@ -204,12 +399,15 @@ def connect_database():
             )
             _cursor = _connection.cursor()
         except Exception as exc:
+            logger.exception('MySQL connection failed')
             raise RuntimeError(f'Could not connect to MySQL: {exc}') from exc
     else:
-        db_file = config.get('database', 'db_file', fallback='inventory_system.db')
+        db_file = os.environ.get('INVENTORY_DB_FILE') or config.get(
+            'database', 'db_file', fallback='inventory_system.db')
         try:
             _connection = sqlite3.connect(db_file)
         except Exception as exc:
+            logger.exception('SQLite open failed')
             raise RuntimeError(f'Could not open database file "{db_file}": {exc}') from exc
         _connection.row_factory = sqlite3.Row
         _connection.execute('PRAGMA foreign_keys = ON')
@@ -244,14 +442,33 @@ def rollback():
 
 
 def hash_password(password):
-    return hashlib.pbkdf2_hmac(
-        'sha256', str(password).encode('utf-8'), PASSWORD_SALT.encode('utf-8'), 100000).hex()
+    return _hash_password(str(password), os.urandom(16), PASSWORD_ITERATIONS)
+
+
+def _hash_password(password, salt, iterations):
+    digest = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, iterations).hex()
+    return f'{_HASH_PREFIX}{iterations}${salt.hex()}${digest}'
 
 
 def verify_password(password, hashed):
-    if not hashed:
+    stored = str(hashed or '')
+    if not stored:
         return False
-    return hash_password(password) == str(hashed)
+    if stored.startswith(_HASH_PREFIX):
+        try:
+            _, iterations, salt_hex, digest = stored.split('$', 3)
+            candidate = hashlib.pbkdf2_hmac(
+                'sha256', str(password).encode('utf-8'), bytes.fromhex(salt_hex),
+                int(iterations)).hex()
+            return candidate == digest
+        except (ValueError, TypeError):
+            return False
+    return hashlib.pbkdf2_hmac(
+        'sha256', str(password).encode('utf-8'), PASSWORD_SALT.encode('utf-8'), 100000).hex() == stored
+
+
+def password_needs_rehash(stored):
+    return bool(stored) and not str(stored).startswith(_HASH_PREFIX)
 
 
 def is_integrity_error(exc):
@@ -262,3 +479,10 @@ def is_integrity_error(exc):
         return isinstance(exc, MyIntegrityError)
     except ImportError:
         return False
+
+
+def next_invoice_number(prefix, table):
+    row = query_one(
+        f"SELECT COALESCE(MAX(CAST(SUBSTR(invoice_number, INSTR(invoice_number, '-') + 1) "
+        f"AS INTEGER)), 0) + 1 AS n FROM {table}")
+    return f'{prefix}-{row["n"]:05d}' if row else f'{prefix}-00001'

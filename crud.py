@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
 
+from app_log import logger
 from database import commit, execute, is_integrity_error, query, query_one, rollback, to_iso_date
 from layout import (FIELD_BG, FONT_FAMILY, PRIMARY, ToolTip, resource_path, button, export_to_csv,
                     fs, is_number, is_positive_int, ph, pw, px, py, scale,
@@ -45,6 +46,7 @@ def insert_row(spec, data):
         return True
     except Exception as exc:
         rollback()
+        logger.exception('INSERT failed on %s', spec['table'])
         if is_integrity_error(exc):
             messagebox.showerror('Error', spec['unique_msg'])
         else:
@@ -69,6 +71,7 @@ def update_row(spec, data):
         return True
     except Exception as exc:
         rollback()
+        logger.exception('UPDATE failed on %s', spec['table'])
         messagebox.showerror('Error', f'Database error: {exc}')
         return False
 
@@ -88,6 +91,7 @@ def delete_row(spec, pk_value):
         return True
     except Exception as exc:
         rollback()
+        logger.exception('DELETE failed on %s', spec['table'])
         if is_integrity_error(exc):
             messagebox.showerror('Error', 'Cannot delete: this record is referenced by other records')
         else:
@@ -427,6 +431,8 @@ def build_form(window, spec, ops, on_close=None):
                 if 'options' in field:
                     widget.config(values=field['options'])
                 widget.set(field.get('placeholder', ''))
+                if kind == 'combobox' and field.get('default'):
+                    widget.set(field['default'])
 
         refresh_sources(spec, widgets)
         return widgets
@@ -492,7 +498,7 @@ def build_form(window, spec, ops, on_close=None):
         bind_cancel(detail_frame)
 
         if spec.get('decorate'):
-            spec['decorate'](detail_frame, widgets)
+            spec['decorate'](detail_frame, widgets, mode)
 
         first = next((field for field in spec['fields'] if field['kind'] != 'label'), None)
         if first:

@@ -35,6 +35,17 @@ def resource_path(relative):
     return os.path.join(base, relative)
 
 
+def acquire_single_instance(port=47652):
+    import socket
+    lock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        lock.bind(('127.0.0.1', port))
+        lock.listen(1)
+        return lock
+    except OSError:
+        return None
+
+
 def screen_size(window):
     return window.winfo_screenwidth(), window.winfo_screenheight()
 
