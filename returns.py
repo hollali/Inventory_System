@@ -26,7 +26,7 @@ RETURNS_SPEC = {
     'msg_delete': 'Return deleted and stock deducted',
     'fields': [
         {'key': 'return_id', 'label': 'Return Id', 'kind': 'entry', 'pos': (0, 0),
-         'store': 'int', 'readonly': True},
+         'store': 'int', 'auto': True},
         {'key': 'sale_id', 'label': 'Sale', 'kind': 'source', 'pos': (0, 2),
          'source': ('sales', 'sale_id', 'invoice_number'), 'placeholder': 'Select Sale',
          'display_key': 'sale_id', 'required': True, 'msg': 'Please select a sale'},

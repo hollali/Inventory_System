@@ -136,7 +136,8 @@ def probe_sales_add(result):
     root.update()
     qty.event_generate('<KeyRelease>', when='now')
     root.update()
-    total = [e for e in dlg_entries if e.cget('state') == 'readonly'][0]
+    total = [e for e in dlg_entries if e.grid_info().get('row') == 1
+             and e.grid_info().get('column') == 5][0]
     result['total'] = total.get()
     assert total.get() == '7,500.00', total.get()
     assert any(c.get() == 'Cash' for c in comboboxes(dlg)), 'payment mode must default to Cash'
@@ -293,6 +294,27 @@ assert bal_rows and bal_rows[0][0] == 'UI Customer' and bal_rows[0][3] == '200.0
 dlg.destroy()
 root.update()
 print('customer balances report lists credit customers -> OK')
+
+
+# --- auto-generated ids: add dialog prefills a readonly id and save uses it ---
+def probe_customer_add(result):
+    dlg = dialogs(root)[0]
+    dlg_entries = entries(dlg)
+    assert str(dlg_entries[0].cget('state')) == 'readonly', dlg_entries[0].cget('state')
+    expected = int(dlg_entries[0].get())
+    assert expected > 0, expected
+    dlg_entries[1].insert(0, 'Auto ID Customer')
+    dlg_entries[2].insert(0, '0201119999')
+    dlg_entries[3].insert(0, 'auto@cust.com')
+    result['expected'] = expected
+    find_button(dlg, 'Save').invoke()
+
+
+result = run_modal(customers.customers_frame, 'Add', probe_customer_add)
+row = conn.execute('SELECT customer_id, name FROM customers WHERE customer_id = ?',
+                   (result['expected'],)).fetchone()
+assert row is not None and row['name'] == 'Auto ID Customer', (result, row)
+print(f'auto-generated customer id {result["expected"]} saved through the form -> OK')
 
 
 # --- cleanup ---

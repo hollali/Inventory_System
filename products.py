@@ -32,8 +32,7 @@ PRODUCT_SPEC = {
     'msg_delete': 'Data deleted successfully',
     'fields': [
         {'key': 'product_id', 'label': 'Product Id', 'kind': 'entry', 'pos': (0, 0),
-         'required': True, 'validate': 'positive_int', 'msg': 'Product ID must be a whole number',
-         'store': 'int'},
+         'store': 'int', 'auto': True},
         {'key': 'name', 'label': 'Name', 'kind': 'entry', 'pos': (0, 2), 'required': True},
         {'key': 'category_id', 'label': 'Category', 'kind': 'source', 'pos': (0, 4),
          'source': ('categories', 'category_id', 'name'), 'placeholder': 'Select Category',

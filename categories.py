@@ -25,8 +25,7 @@ CATEGORY_SPEC = {
             ('category_id', 'name', 'description')),
     'fields': [
         {'key': 'category_id', 'label': 'Category Id', 'kind': 'entry', 'pos': (0, 0),
-         'required': True, 'validate': 'positive_int',
-         'msg': 'Category ID must be a whole number', 'store': 'int'},
+         'store': 'int', 'auto': True},
         {'key': 'name', 'label': 'Name', 'kind': 'entry', 'pos': (0, 2), 'required': True},
         {'key': 'description', 'label': 'Description', 'kind': 'text', 'pos': (1, 0),
          'width': 60, 'height': 3, 'colspan': 3, 'required': True},

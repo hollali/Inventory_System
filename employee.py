@@ -27,8 +27,8 @@ EMPLOYEE_SPEC = {
              'Salary', 'Address', 'User Type'),
             ('empid', 'name', 'email', 'number', 'dob', 'gender', 'salary', 'address', 'usertype')),
     'fields': [
-        {'key': 'empid', 'label': 'Employee Id', 'kind': 'entry', 'pos': (0, 0), 'required': True,
-         'validate': 'positive_int', 'msg': 'Employee ID must be a whole number', 'store': 'int'},
+        {'key': 'empid', 'label': 'Employee Id', 'kind': 'entry', 'pos': (0, 0), 'store': 'int',
+         'auto': True},
         {'key': 'name', 'label': 'Name', 'kind': 'entry', 'pos': (0, 2), 'required': True},
         {'key': 'email', 'label': 'Email', 'kind': 'entry', 'pos': (0, 4), 'required': True,
          'validate': 'email', 'msg': 'Please enter a valid email address'},

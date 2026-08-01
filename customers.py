@@ -35,8 +35,7 @@ CUSTOMERS_SPEC = {
     'msg_delete': 'Customer deleted successfully',
     'fields': [
         {'key': 'customer_id', 'label': 'Customer Id', 'kind': 'entry', 'pos': (0, 0),
-         'required': True, 'validate': 'positive_int', 'msg': 'Customer ID must be a whole number',
-         'store': 'int'},
+         'store': 'int', 'auto': True},
         {'key': 'name', 'label': 'Name', 'kind': 'entry', 'pos': (0, 2), 'required': True},
         {'key': 'phone', 'label': 'Phone', 'kind': 'entry', 'pos': (0, 4), 'required': True,
          'validate': 'phone', 'msg': 'Please enter a valid phone number'},

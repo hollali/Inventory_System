@@ -29,7 +29,7 @@ PURCHASES_SPEC = {
     'msg_delete': 'Purchase deleted and stock deducted',
     'fields': [
         {'key': 'purchase_id', 'label': 'Purchase Id', 'kind': 'entry', 'pos': (0, 0),
-         'store': 'int', 'readonly': True},
+         'store': 'int', 'auto': True},
         {'key': 'supplier_id', 'label': 'Supplier', 'kind': 'source', 'pos': (0, 2),
          'source': ('suppliers', 'supplier_id', 'name'), 'placeholder': 'Select Supplier',
          'display_key': 'supplier', 'required': True, 'msg': 'Please select a supplier'},

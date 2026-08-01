@@ -38,8 +38,8 @@ SALES_SPEC = {
     'msg_update': 'Sale updated successfully',
     'msg_delete': 'Sale deleted and stock restored',
     'fields': [
-        {'key': 'sale_id', 'label': 'Sale Id', 'kind': 'entry', 'pos': (0, 0), 'required': True,
-         'validate': 'positive_int', 'msg': 'Sale ID must be a whole number', 'store': 'int'},
+        {'key': 'sale_id', 'label': 'Sale Id', 'kind': 'entry', 'pos': (0, 0), 'store': 'int',
+         'auto': True},
         {'key': 'invoice_no', 'label': 'Invoice No.', 'kind': 'label', 'pos': (3, 0),
          'label_text': ''},
         {'key': 'product_id', 'label': 'Product', 'kind': 'source', 'pos': (0, 2),

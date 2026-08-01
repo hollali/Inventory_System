@@ -477,6 +477,14 @@ def is_integrity_error(exc):
         return False
 
 
+def next_id(table, id_column):
+    row = query_one('SELECT seq + 1 AS next FROM sqlite_sequence WHERE name = ?', (table,))
+    if row and row['next'] is not None:
+        return int(row['next'])
+    row = query_one(f'SELECT COALESCE(MAX({id_column}), 0) + 1 AS next FROM {table}')
+    return int(row['next']) if row else 1
+
+
 def next_invoice_number(prefix, table):
     row = query_one(
         f"SELECT COALESCE(MAX(CAST(SUBSTR(invoice_number, INSTR(invoice_number, '-') + 1) "

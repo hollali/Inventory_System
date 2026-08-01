@@ -4,7 +4,8 @@ from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
 
 from app_log import logger
-from database import commit, execute, is_integrity_error, query, query_one, rollback, to_iso_date
+from database import (commit, execute, is_integrity_error, next_id, query, query_one, rollback,
+                      to_iso_date)
 from layout import (FIELD_BG, FONT_FAMILY, PRIMARY, ToolTip, resource_path, button, export_to_csv,
                     fs, is_number, is_positive_int, ph, pw, px, py, scale,
                     validate_email, validate_phone)
@@ -294,7 +295,8 @@ def clear_fields(spec, widgets):
             set_widget(widget, '')
     if spec.get('on_clear'):
         spec['on_clear'](widgets)
-    first = next((field for field in spec['fields'] if field['kind'] != 'label'), None)
+    first = next((field for field in spec['fields']
+                  if field['kind'] != 'label' and not field.get('auto')), None)
     if first:
         widgets[first['key']].focus_set()
 
@@ -399,9 +401,10 @@ def build_form(window, spec, ops, on_close=None):
                                    sticky='w' if kind == 'text' else '')
 
             if kind == 'entry':
+                readonly = field.get('readonly') or field.get('auto')
                 widget = Entry(parent, font=(FONT_FAMILY, fs(SY, 16), 'bold'), bg=FIELD_BG,
                                show='*' if field.get('mask') else '',
-                               state='readonly' if field.get('readonly') else 'normal')
+                               state='readonly' if readonly else 'normal')
             elif kind in ('combobox', 'source'):
                 widget = ttk.Combobox(parent, font=(FONT_FAMILY, fs(SY, 16), 'bold'),
                                       width=field.get('width', 18), state='readonly')
@@ -426,6 +429,9 @@ def build_form(window, spec, ops, on_close=None):
                         padx=px(SX, 20), pady=py(SY, 10),
                         rowspan=field.get('rowspan', 1), columnspan=field.get('colspan', 1),
                         sticky='w' if kind == 'text' else '')
+
+            if kind == 'entry' and field.get('auto'):
+                set_widget(widget, str(next_id(spec['table'], field['key'])))
 
             if kind in ('combobox', 'source'):
                 if 'options' in field:
@@ -500,7 +506,8 @@ def build_form(window, spec, ops, on_close=None):
         if spec.get('decorate'):
             spec['decorate'](detail_frame, widgets, mode)
 
-        first = next((field for field in spec['fields'] if field['kind'] != 'label'), None)
+        first = next((field for field in spec['fields']
+                      if field['kind'] != 'label' and not field.get('auto')), None)
         if first:
             widgets[first['key']].focus_set()
 
