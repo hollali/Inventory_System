@@ -141,7 +141,7 @@ class ToolTip:
 def button(master, text, command, danger=False, width=10, font_size=12, icon=None):
     bg = DANGER if danger else PRIMARY
     hover = DANGER_HOVER if danger else PRIMARY_HOVER
-    return tk.Button(master, image=icon, compound=LEFT if icon else None, text=text,
+    return tk.Button(master, image=icon, compound=tk.LEFT if icon else None, text=text,
                      font=(FONT_FAMILY, font_size), width=width, cursor='hand2',
                      fg='white', bg=bg, activebackground=hover, activeforeground='white',
                      bd=0, padx=10, command=command)
