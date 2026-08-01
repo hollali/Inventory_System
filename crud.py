@@ -6,8 +6,8 @@ from tkcalendar import DateEntry
 from app_log import logger
 from database import (commit, execute, format_money, is_integrity_error, money_from_cents,
                       money_to_cents, next_id, query, query_one, rollback, to_iso_date)
-from layout import (FIELD_BG, FONT_FAMILY, PRIMARY, ToolTip, resource_path, button, export_to_csv,
-                    fs, is_number, is_positive_int, ph, pw, px, py, scale,
+from layout import (ACCENT, FIELD_BG, FONT_FAMILY, PRIMARY, ToolTip, resource_path, button,
+                    export_to_csv, fs, is_number, is_positive_int, ph, pw, px, py, scale,
                     validate_email, validate_phone)
 
 _frames = {}
@@ -322,12 +322,24 @@ def build_form(window, spec, ops, on_close=None):
     Label(frame, text=spec['title'], font=(FONT_FAMILY, fs(SY, 16), 'bold'),
           bg=PRIMARY, fg='white').place(x=0, y=0, relwidth=1)
 
+    def go_to_dashboard():
+        frame.place_forget()
+        if on_close:
+            on_close()
+
     back_image = PhotoImage(file=resource_path('images/back.png'))
     back_button = Button(frame, image=back_image, bd=0, cursor='hand2', bg='white',
-                         command=lambda: (frame.place_forget(), on_close() if on_close else None))
+                         command=go_to_dashboard)
     back_button.image = back_image
     back_button.place(x=px(SX, 10), y=py(SY, 30))
     ToolTip(back_button, 'Back to dashboard')
+
+    dashboard_button = Button(frame, text='Dashboard', font=(FONT_FAMILY, fs(SY, 12), 'bold'),
+                              bd=0, cursor='hand2', bg='white', fg=PRIMARY,
+                              activebackground='white', activeforeground=ACCENT,
+                              command=go_to_dashboard)
+    dashboard_button.place(x=px(SX, 60), y=py(SY, 32))
+    ToolTip(dashboard_button, 'Return to the dashboard')
 
     top_frame = Frame(frame, bg='white')
     top_frame.place(x=0, y=py(SY, 60), relwidth=1, height=ph(SY, 380))
