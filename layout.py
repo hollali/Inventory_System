@@ -6,7 +6,7 @@ from tkinter import messagebox
 
 DESIGN_W = 1920
 DESIGN_H = 1080
-FONT_FAMILY = 'times new roman'
+FONT_FAMILY = 'Arial'
 
 PRIMARY = '#0f4d7d'
 PRIMARY_DARK = '#010c48'
