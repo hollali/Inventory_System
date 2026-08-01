@@ -1,5 +1,6 @@
 import crud
 import movements
+from database import money_from_cents
 from layout import export_to_csv
 
 PRODUCT_SPEC = {
@@ -129,9 +130,11 @@ def get_count():
 
 def export_product_csv():
     rows = crud.fetch_rows(PRODUCT_SPEC)
-    records = [tuple(row[key] for key in ('product_id', 'name', 'category_name',
-                                          'supplier_name', 'price', 'cost_price',
-                                          'quantity', 'reorder_level', 'description'))
+    records = [tuple(money_from_cents(row[key]) if key in ('price', 'cost_price')
+                     else row[key]
+                     for key in ('product_id', 'name', 'category_name',
+                                 'supplier_name', 'price', 'cost_price',
+                                 'quantity', 'reorder_level', 'description'))
                for row in rows]
     export_to_csv(None, ('Product Id', 'Name', 'Category', 'Supplier', 'Price',
                          'Cost Price', 'Quantity', 'Reorder Level', 'Description'),

@@ -1,5 +1,5 @@
 import crud
-from database import query
+from database import money_from_cents, query
 import sales
 
 RETURNS_SPEC = {
@@ -90,9 +90,11 @@ def get_total_refunded():
 
 
 def export_return_csv():
-    records = [tuple(row[key] for key in ('return_id', 'invoice_number', 'sale_id', 'product',
-                                          'quantity', 'unit_price', 'total', 'return_date',
-                                          'customer')) for row in rows()]
+    records = [tuple(money_from_cents(row[key]) if key in ('unit_price', 'total')
+                     else row[key]
+                     for key in ('return_id', 'invoice_number', 'sale_id', 'product',
+                                 'quantity', 'unit_price', 'total', 'return_date',
+                                 'customer')) for row in rows()]
     from layout import export_to_csv
     export_to_csv(None, ('Return Id', 'Invoice', 'Sale Id', 'Product', 'Quantity',
                          'Unit Price', 'Total', 'Return Date', 'Customer'), records,

@@ -1,6 +1,7 @@
 import configparser
 import hashlib
 import os
+import re
 import shutil
 import sqlite3
 import time
@@ -23,10 +24,12 @@ CREATE TABLE IF NOT EXISTS employee_data (
     email VARCHAR(255),
     number VARCHAR(50),
     dob TEXT,
-    salary REAL,
+    salary INTEGER,
     address TEXT,
     usertype VARCHAR(50),
-    password TEXT
+    password TEXT,
+    failed_attempts INTEGER DEFAULT 0,
+    locked_until REAL
 )'''
 
 _SCHEMA_SQL = [
@@ -52,8 +55,8 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(255) NOT NULL UNIQUE,
     category_id INTEGER,
     supplier_id INTEGER,
-    price REAL CHECK (price >= 0),
-    cost_price REAL DEFAULT 0 CHECK (cost_price >= 0),
+    price INTEGER CHECK (price >= 0),
+    cost_price INTEGER DEFAULT 0 CHECK (cost_price >= 0),
     quantity INTEGER DEFAULT 0 CHECK (quantity >= 0),
     reorder_level INTEGER DEFAULT 0 CHECK (reorder_level >= 0),
     description TEXT,
@@ -65,14 +68,15 @@ CREATE TABLE IF NOT EXISTS sales (
     sale_id INTEGER PRIMARY KEY AUTOINCREMENT,
     product_id INTEGER,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
-    unit_price REAL NOT NULL CHECK (unit_price >= 0),
-    total REAL NOT NULL CHECK (total >= 0),
+    unit_price INTEGER NOT NULL CHECK (unit_price >= 0),
+    total INTEGER NOT NULL CHECK (total >= 0),
     sale_date TEXT NOT NULL,
     customer TEXT NOT NULL,
     invoice_number TEXT,
     payment_mode TEXT NOT NULL DEFAULT 'Cash',
     customer_id INTEGER,
-    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE RESTRICT
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE RESTRICT,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL
 )''',
     '''
 CREATE TABLE IF NOT EXISTS returns (
@@ -80,11 +84,13 @@ CREATE TABLE IF NOT EXISTS returns (
     sale_id INTEGER,
     product_id INTEGER,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
-    unit_price REAL NOT NULL CHECK (unit_price >= 0),
-    total REAL NOT NULL CHECK (total >= 0),
+    unit_price INTEGER NOT NULL CHECK (unit_price >= 0),
+    total INTEGER NOT NULL CHECK (total >= 0),
     return_date TEXT NOT NULL,
     customer TEXT,
-    invoice_number TEXT
+    invoice_number TEXT,
+    FOREIGN KEY (sale_id) REFERENCES sales(sale_id) ON DELETE SET NULL,
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE SET NULL
 )''',
     '''
 CREATE TABLE IF NOT EXISTS stock_movements (
@@ -94,7 +100,8 @@ CREATE TABLE IF NOT EXISTS stock_movements (
     reason TEXT NOT NULL,
     reference_id INTEGER,
     created_by INTEGER,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE SET NULL
 )''',
     '''
 CREATE TABLE IF NOT EXISTS purchases (
@@ -103,8 +110,8 @@ CREATE TABLE IF NOT EXISTS purchases (
     supplier_id INTEGER,
     product_id INTEGER,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
-    unit_cost REAL NOT NULL CHECK (unit_cost >= 0),
-    total REAL NOT NULL CHECK (total >= 0),
+    unit_cost INTEGER NOT NULL CHECK (unit_cost >= 0),
+    total INTEGER NOT NULL CHECK (total >= 0),
     purchase_date TEXT NOT NULL,
     payment_mode TEXT NOT NULL DEFAULT 'Cash',
     note TEXT,
@@ -118,14 +125,14 @@ CREATE TABLE IF NOT EXISTS customers (
     phone VARCHAR(50),
     email VARCHAR(255),
     address TEXT,
-    credit_limit REAL DEFAULT 0 CHECK (credit_limit >= 0),
+    credit_limit INTEGER DEFAULT 0 CHECK (credit_limit >= 0),
     created_at TEXT
 )''',
     '''
 CREATE TABLE IF NOT EXISTS credit_payments (
     payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_id INTEGER,
-    amount REAL NOT NULL CHECK (amount >= 0),
+    amount INTEGER NOT NULL CHECK (amount >= 0),
     payment_date TEXT NOT NULL,
     note TEXT,
     created_by INTEGER,
@@ -134,7 +141,7 @@ CREATE TABLE IF NOT EXISTS credit_payments (
 )''',
 ]
 
-MIGRATION_VERSION = 7
+MIGRATION_VERSION = 8
 
 _connection = None
 _cursor = None
@@ -177,6 +184,31 @@ def _parse_number(value):
         return float(str(value).strip().replace(',', ''))
     except (ValueError, TypeError):
         return None
+
+
+def money_to_cents(value):
+    """Parse a user-entered amount (float or comma-formatted string) into integer cents."""
+    if value is None:
+        return None
+    try:
+        return int(round(float(str(value).strip().replace(',', '')) * 100))
+    except (ValueError, TypeError):
+        return None
+
+
+def money_from_cents(value):
+    """Convert stored integer cents into a float for display/export."""
+    if value is None:
+        return 0.0
+    try:
+        return float(value) / 100.0
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def format_money(value):
+    """Format stored integer cents as a 2-decimal currency string."""
+    return f'{money_from_cents(value):,.2f}'
 
 
 def to_iso_date(value):
@@ -350,6 +382,72 @@ def migrate():
             _cursor.execute('ALTER TABLE employee_data ADD COLUMN failed_attempts INTEGER DEFAULT 0')
         if 'locked_until' not in columns:
             _cursor.execute('ALTER TABLE employee_data ADD COLUMN locked_until REAL')
+
+    if version < 8:
+        _money_tables = {
+            'sales': ('unit_price', 'total'),
+            'purchases': ('unit_cost', 'total'),
+            'returns': ('unit_price', 'total'),
+            'products': ('price', 'cost_price'),
+            'customers': ('credit_limit',),
+            'employee_data': ('salary',),
+            'credit_payments': ('amount',),
+            'stock_movements': (),
+        }
+        needs_rebuild = False
+        for table, money_cols in _money_tables.items():
+            columns = {row['name']: (row['type'] or '').upper()
+                       for row in _cursor.execute(f'PRAGMA table_info({table})')}
+            if any(columns.get(col) != 'INTEGER' for col in money_cols):
+                needs_rebuild = True
+                break
+        if needs_rebuild:
+            _cursor.execute('UPDATE returns SET sale_id = NULL WHERE sale_id IS NOT NULL AND NOT EXISTS '
+                            '(SELECT 1 FROM sales WHERE sales.sale_id = returns.sale_id)')
+            _cursor.execute('UPDATE returns SET product_id = NULL WHERE product_id IS NOT NULL '
+                            'AND NOT EXISTS (SELECT 1 FROM products WHERE products.product_id = returns.product_id)')
+            _cursor.execute('UPDATE stock_movements SET product_id = NULL WHERE product_id IS NOT NULL '
+                            'AND NOT EXISTS (SELECT 1 FROM products '
+                            'WHERE products.product_id = stock_movements.product_id)')
+            _cursor.execute('UPDATE sales SET customer_id = NULL WHERE customer_id IS NOT NULL '
+                            'AND NOT EXISTS (SELECT 1 FROM customers '
+                            'WHERE customers.customer_id = sales.customer_id)')
+            _connection.commit()
+            _cursor.execute('PRAGMA foreign_keys = OFF')
+            try:
+                _ddl_by_name = {}
+                for statement in _SCHEMA_SQL:
+                    match = re.search(r'CREATE TABLE IF NOT EXISTS (\w+)', statement)
+                    if match:
+                        _ddl_by_name[match.group(1)] = statement
+                _pk_by_table = {
+                    'sales': 'sale_id', 'purchases': 'purchase_id', 'returns': 'return_id',
+                    'products': 'product_id', 'customers': 'customer_id',
+                    'employee_data': 'empid', 'credit_payments': 'payment_id',
+                    'stock_movements': 'movement_id',
+                }
+                for table, money_cols in _money_tables.items():
+                    temp_name = table + '_v8'
+                    _cursor.execute(_ddl_by_name[table].replace(
+                        f'CREATE TABLE IF NOT EXISTS {table} (', f'CREATE TABLE {temp_name} ('))
+                    new_cols = [row['name'] for row in
+                                _cursor.execute(f'PRAGMA table_info({temp_name})')]
+                    select_cols = ', '.join(
+                        ('CASE WHEN {col} IS NULL THEN NULL ELSE CAST(ROUND({col} * 100) AS INTEGER) END'
+                         if col in money_cols else col).format(col=col)
+                        for col in new_cols)
+                    _cursor.execute(
+                        f'INSERT INTO {temp_name} ({", ".join(new_cols)}) '
+                        f'SELECT {select_cols} FROM {table}')
+                    _cursor.execute(f'DROP TABLE {table}')
+                    _cursor.execute(f'ALTER TABLE {temp_name} RENAME TO {table}')
+                    count = _cursor.execute(f'SELECT COUNT(*) AS n FROM {table}').fetchone()['n']
+                    if count:
+                        _cursor.execute(
+                            f'INSERT OR REPLACE INTO sqlite_sequence(name, seq) VALUES '
+                            f'(?, (SELECT MAX({_pk_by_table[table]}) FROM {table}))', (table,))
+            finally:
+                _cursor.execute('PRAGMA foreign_keys = ON')
 
     _cursor.execute(f'PRAGMA user_version = {MIGRATION_VERSION}')
     _connection.commit()

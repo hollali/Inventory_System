@@ -5,7 +5,7 @@ from tkcalendar import DateEntry
 
 import crud
 from app_log import logger
-from database import query, query_one
+from database import format_money, money_from_cents, query, query_one
 from layout import (FONT_FAMILY, PRIMARY, FIELD_BG, button, export_to_csv,
                     fs, ph, px, pw, py, scale)
 import customers
@@ -78,10 +78,10 @@ def receipt_text(sale_id):
     ]
     for line in lines:
         body.append(f'{line["product"] or "-":<20} {line["quantity"]} x '
-                    f'{line["unit_price"]:,.2f} = {line["total"]:,.2f}')
+                    f'{format_money(line["unit_price"])} = {format_money(line["total"])}')
     body += [
         '------------------------------',
-        f'Total:        {total:,.2f}',
+        f'Total:        {format_money(total)}',
         '==============================',
         'Thank you for your business!',
     ]
@@ -234,12 +234,13 @@ def show_sales_report(window):
         for row in rows:
             tree.insert('', END, values=(row['sale_id'], row['invoice_number'] or '',
                                          row['product'] or '', row['quantity'],
-                                         f'{row["unit_price"]:,.2f}', f'{row["total"]:,.2f}',
+                                         format_money(row['unit_price']),
+                                         format_money(row['total']),
                                          row['sale_date'], row['customer'],
                                          row['payment_mode']))
         revenue = sum(row['total'] or 0 for row in rows)
         summary_label.config(
-            text=f'{len(rows)} sale(s) | Total revenue: {revenue:,.2f}')
+            text=f'{len(rows)} sale(s) | Total revenue: {format_money(revenue)}')
 
     def export():
         start = from_entry.get()
@@ -249,7 +250,8 @@ def show_sales_report(window):
                       ('Sale Id', 'Invoice', 'Product', 'Quantity', 'Unit Price', 'Total',
                        'Sale Date', 'Customer', 'Payment'),
                       [(row['sale_id'], row['invoice_number'] or '', row['product'] or '',
-                        row['quantity'], row['unit_price'], row['total'], row['sale_date'],
+                        row['quantity'], money_from_cents(row['unit_price']),
+                        money_from_cents(row['total']), row['sale_date'],
                         row['customer'], row['payment_mode']) for row in rows],
                       'sales_report.csv')
 
@@ -468,7 +470,7 @@ def show_stock_movements(window):
 def stock_valuation_rows():
     return [dict(row) for row in query(
         'SELECT p.name AS product, c.name AS category, p.quantity, p.price, '
-        'ROUND(p.quantity * p.price, 2) AS value '
+        'p.quantity * p.price AS value '
         'FROM products p '
         'LEFT JOIN categories c ON c.category_id = p.category_id '
         'WHERE p.quantity > 0 ORDER BY value DESC')]
@@ -477,7 +479,7 @@ def stock_valuation_rows():
 def _top_sellers():
     return [dict(row) for row in query(
         'SELECT p.name AS product, c.name AS category, SUM(s.quantity) AS units_sold, '
-        'ROUND(SUM(s.total), 2) AS revenue '
+        'SUM(s.total) AS revenue '
         'FROM sales s JOIN products p ON p.product_id = s.product_id '
         'LEFT JOIN categories c ON c.category_id = p.category_id '
         'GROUP BY p.product_id ORDER BY revenue DESC')]
@@ -487,7 +489,7 @@ def _sales_by_employee():
     return [dict(row) for row in query(
         "SELECT COALESCE(e.name, '-') AS employee, "
         'COUNT(DISTINCT s.invoice_number) AS sales_count, '
-        'SUM(-m.quantity_delta) AS units_sold, ROUND(SUM(s.total), 2) AS revenue '
+        'SUM(-m.quantity_delta) AS units_sold, SUM(s.total) AS revenue '
         'FROM stock_movements m '
         'LEFT JOIN employee_data e ON e.empid = m.created_by '
         'LEFT JOIN sales s ON s.sale_id = m.reference_id '
@@ -497,7 +499,7 @@ def _sales_by_employee():
 def _profit_by_product():
     return [dict(row) for row in query(
         'SELECT p.name AS product, c.name AS category, SUM(s.quantity) AS units_sold, '
-        'ROUND(SUM((s.unit_price - COALESCE(p.cost_price, 0)) * s.quantity), 2) AS profit '
+        'SUM((s.unit_price - COALESCE(p.cost_price, 0)) * s.quantity) AS profit '
         'FROM sales s JOIN products p ON p.product_id = s.product_id '
         'LEFT JOIN categories c ON c.category_id = p.category_id '
         'GROUP BY p.product_id ORDER BY profit DESC')]
@@ -507,7 +509,7 @@ def _profit_by_category():
     return [dict(row) for row in query(
         'SELECT COALESCE(c.name, "Uncategorised") AS category, '
         'SUM(s.quantity) AS units_sold, '
-        'ROUND(SUM((s.unit_price - COALESCE(p.cost_price, 0)) * s.quantity), 2) AS profit '
+        'SUM((s.unit_price - COALESCE(p.cost_price, 0)) * s.quantity) AS profit '
         'FROM sales s JOIN products p ON p.product_id = s.product_id '
         'LEFT JOIN categories c ON c.category_id = p.category_id '
         'GROUP BY c.category_id ORDER BY profit DESC')]
@@ -520,7 +522,7 @@ ANALYTICS_REPORTS = {
         'rows': _top_sellers,
         'export_headers': ('Product', 'Category', 'Units Sold', 'Revenue'),
         'values': lambda r: (r['product'], r['category'] or '', r['units_sold'],
-                             f'{r["revenue"]:,.2f}'),
+                             format_money(r['revenue'])),
     },
     'Sales by Employee': {
         'columns': ('employee', 'sales_count', 'units_sold', 'revenue'),
@@ -528,7 +530,7 @@ ANALYTICS_REPORTS = {
         'rows': _sales_by_employee,
         'export_headers': ('Employee', 'Sales Count', 'Units Sold', 'Revenue'),
         'values': lambda r: (r['employee'], r['sales_count'], r['units_sold'],
-                             f'{r["revenue"]:,.2f}'),
+                             format_money(r['revenue'])),
     },
     'Profit by Product': {
         'columns': ('product', 'category', 'units_sold', 'profit'),
@@ -536,14 +538,14 @@ ANALYTICS_REPORTS = {
         'rows': _profit_by_product,
         'export_headers': ('Product', 'Category', 'Units Sold', 'Profit'),
         'values': lambda r: (r['product'], r['category'] or '', r['units_sold'],
-                             f'{r["profit"]:,.2f}'),
+                             format_money(r['profit'])),
     },
     'Profit by Category': {
         'columns': ('category', 'units_sold', 'profit'),
         'widths': (320, 130, 160),
         'rows': _profit_by_category,
         'export_headers': ('Category', 'Units Sold', 'Profit'),
-        'values': lambda r: (r['category'], r['units_sold'], f'{r["profit"]:,.2f}'),
+        'values': lambda r: (r['category'], r['units_sold'], format_money(r['profit'])),
     },
 }
 
@@ -573,16 +575,17 @@ def show_stock_valuation(window):
         tree.delete(*tree.get_children())
         for row in rows:
             tree.insert('', END, values=(row['product'], row['category'] or '',
-                                         row['quantity'], f'{row["price"]:,.2f}',
-                                         f'{row["value"]:,.2f}'))
+                                         row['quantity'], format_money(row['price']),
+                                         format_money(row['value'])))
         total = sum(row['value'] or 0 for row in rows)
-        summary_label.config(text=f'Total inventory value: {total:,.2f}')
+        summary_label.config(text=f'Total inventory value: {format_money(total)}')
 
     def export():
         rows = stock_valuation_rows()
         export_to_csv(dialog, ('Product', 'Category', 'Quantity', 'Price', 'Value'),
                       [(row['product'], row['category'] or '', row['quantity'],
-                        row['price'], row['value']) for row in rows],
+                        money_from_cents(row['price']), money_from_cents(row['value']))
+                       for row in rows],
                       'stock_valuation.csv')
 
     controls = Frame(dialog, bg='white')
@@ -644,7 +647,8 @@ def show_sales_analytics(window):
             tree.insert('', END, values=spec['values'](row))
         total_col = 'revenue' if 'revenue' in spec['columns'] else 'profit'
         total = sum(row.get(total_col) or 0 for row in rows)
-        summary_label.config(text=f'{len(rows)} row(s) | Total {total_col}: {total:,.2f}')
+        summary_label.config(
+            text=f'{len(rows)} row(s) | Total {total_col}: {format_money(total)}')
 
     def export():
         spec = ANALYTICS_REPORTS[report_var.get()]
@@ -671,8 +675,8 @@ def reorder_rows(threshold=LOW_STOCK_THRESHOLD):
         'SELECT p.product_id, p.name AS product, s.name AS supplier, p.supplier_id, '
         'p.quantity, p.reorder_level, COALESCE(p.cost_price, 0) AS cost_price, '
         'MAX(2 * COALESCE(NULLIF(p.reorder_level, 0), ?) - p.quantity, 1) AS suggested_qty, '
-        'ROUND(MAX(2 * COALESCE(NULLIF(p.reorder_level, 0), ?) - p.quantity, 1) * '
-        'COALESCE(p.cost_price, 0), 2) AS suggested_cost '
+        'MAX(2 * COALESCE(NULLIF(p.reorder_level, 0), ?) - p.quantity, 1) * '
+        'COALESCE(p.cost_price, 0) AS suggested_cost '
         'FROM products p LEFT JOIN suppliers s ON s.supplier_id = p.supplier_id '
         'WHERE p.quantity <= COALESCE(NULLIF(p.reorder_level, 0), ?) '
         'ORDER BY p.quantity, p.name',
@@ -724,12 +728,13 @@ def show_reorder_picker(window):
         for row in rows:
             tree.insert('', END, values=(row['product'], row['supplier'] or '-',
                                          row['quantity'], row['reorder_level'] or '',
-                                         row['suggested_qty'], f'{row["cost_price"]:,.2f}',
-                                         f'{row["suggested_cost"]:,.2f}'))
+                                         row['suggested_qty'], format_money(row['cost_price']),
+                                         format_money(row['suggested_cost'])))
             displayed_rows.append(row)
         cost = sum(row['suggested_cost'] for row in rows)
         summary_label.config(
-            text=f'{len(rows)} product(s) need restock | estimated cost: {cost:,.2f}')
+            text=f'{len(rows)} product(s) need restock | estimated cost: '
+                 f'{format_money(cost)}')
 
     def create_purchases():
         selected = tree.selection()
@@ -758,7 +763,8 @@ def show_reorder_picker(window):
                                'Suggested Qty', 'Unit Cost', 'Suggested Cost'),
                       [(row['product'], row['supplier'] or '', row['quantity'],
                         row['reorder_level'] or '', row['suggested_qty'],
-                        row['cost_price'], row['suggested_cost']) for row in rows],
+                        money_from_cents(row['cost_price']),
+                        money_from_cents(row['suggested_cost'])) for row in rows],
                       'reorder_list.csv')
 
     controls = Frame(dialog, bg='white')
@@ -799,17 +805,19 @@ def show_customer_balances(window):
         tree.delete(*tree.get_children())
         for row in rows:
             tree.insert('', END, values=(row['name'], row['phone'] or '',
-                                         f'{row["credit_limit"] or 0:,.2f}',
-                                         f'{row["balance"]:,.2f}'))
+                                         format_money(row['credit_limit'] or 0),
+                                         format_money(row['balance'] or 0)))
         total = sum(row['balance'] or 0 for row in rows)
         summary_label.config(
-            text=f'{len(rows)} customer(s) on credit | Total outstanding: {total:,.2f}')
+            text=f'{len(rows)} customer(s) on credit | Total outstanding: '
+                 f'{format_money(total)}')
 
     def export():
         rows = customers.customer_balances_rows()
         export_to_csv(dialog, ('Customer', 'Phone', 'Credit Limit', 'Outstanding Balance'),
-                      [(row['name'], row['phone'] or '', row['credit_limit'] or 0,
-                        row['balance'] or 0) for row in rows],
+                      [(row['name'], row['phone'] or '',
+                        money_from_cents(row['credit_limit'] or 0),
+                        money_from_cents(row['balance'] or 0)) for row in rows],
                       'customer_balances.csv')
 
     controls = Frame(dialog, bg='white')
@@ -865,7 +873,7 @@ def show_charts(window):
     if revenue:
         ax1 = figure.add_subplot(1, 2, 1)
         days = [r['day'] for r in revenue]
-        amounts = [r['revenue'] or 0 for r in revenue]
+        amounts = [money_from_cents(r['revenue'] or 0) for r in revenue]
         ax1.bar(days, amounts, color='#0f4d7d')
         ax1.set_title('Revenue by Day')
         ax1.set_xlabel('Date')
@@ -874,7 +882,7 @@ def show_charts(window):
     if top:
         ax2 = figure.add_subplot(1, 2, 2)
         sellers = [r['product'] for r in top[:5]]
-        seller_revenue = [r['revenue'] or 0 for r in top[:5]]
+        seller_revenue = [money_from_cents(r['revenue'] or 0) for r in top[:5]]
         ax2.barh(sellers[::-1], seller_revenue[::-1], color='#2ca089')
         ax2.set_title('Top 5 Products by Revenue')
         ax2.set_xlabel('Revenue')

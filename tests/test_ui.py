@@ -175,8 +175,8 @@ products.update_record({'product_id': 300, 'name': 'Laptop', 'category_id': 200,
 assert any(r['product'] == 'Laptop' for r in reports.low_stock_rows(5))
 sales.add_sale(400, 'Laptop', '2', '2,500', '5,000.00', '01/08/2026', 'JD')
 assert reports._top_sellers()[0]['units_sold'] == 2
-assert reports._profit_by_product()[0]['profit'] == 2000.0
-assert reports.stock_valuation_rows()[0]['value'] == 20000.0   # 8 * 2500
+assert reports._profit_by_product()[0]['profit'] == 200000
+assert reports.stock_valuation_rows()[0]['value'] == 2000000   # 8 * 2500, in cents
 dlg = reports.show_stock_valuation(root)
 root.update()
 dlg.destroy()
@@ -270,7 +270,7 @@ print('customers: balance column + update dialog balance label -> OK')
 # a credit sale for the UI customer so payments reduce a positive balance
 sales.add_sale(402, 'Laptop', '1', '700', '700.00', '01/08/2026', 'UI Customer',
                payment_mode='Credit')
-assert customers.get_balance(700) == 700.0, customers.get_balance(700)
+assert customers.get_balance(700) == 70000, customers.get_balance(700)
 
 
 def probe_payment(result):
@@ -283,7 +283,7 @@ def probe_payment(result):
 
 
 result = run_modal(customers.customers_frame, 'Record Payment', probe_payment)
-assert result['balance'] == 200.0, result
+assert result['balance'] == 20000, result
 print('customers: record payment reduces outstanding balance -> OK')
 
 dlg = reports.show_customer_balances(root)

@@ -1,8 +1,8 @@
 import crud
 import movements
 from app_log import logger
-from database import (commit, execute, is_integrity_error, next_invoice_number, query,
-                      query_one, rollback)
+from database import (commit, execute, format_money, is_integrity_error, money_from_cents,
+                      next_invoice_number, query, query_one, rollback)
 
 PURCHASES_SPEC = {
     'table': 'purchases',
@@ -73,7 +73,7 @@ def add_record(data):
     cleaned = crud.validate_data(PURCHASES_SPEC, data, 'add')
     if cleaned is None:
         return False
-    cleaned['total'] = round(cleaned['quantity'] * cleaned['unit_cost'], 2)
+    cleaned['total'] = cleaned['quantity'] * cleaned['unit_cost']
     cleaned['invoice_number'] = next_invoice_number('PO', 'purchases')
     if cleaned['unit_cost'] < 0:
         crud.messagebox.showerror('Error', 'Unit cost must be a positive number')
@@ -111,7 +111,7 @@ def update_record(data):
     cleaned = crud.validate_data(PURCHASES_SPEC, data, 'update')
     if cleaned is None:
         return False
-    cleaned['total'] = round(cleaned['quantity'] * cleaned['unit_cost'], 2)
+    cleaned['total'] = cleaned['quantity'] * cleaned['unit_cost']
     if cleaned['unit_cost'] < 0:
         crud.messagebox.showerror('Error', 'Unit cost must be a positive number')
         return False
@@ -177,7 +177,7 @@ def create_purchase(product_id, quantity, unit_cost, supplier_id, purchase_date,
         'supplier_id': supplier_id,
         'product_id': product_id,
         'quantity': quantity, 'unit_cost': unit_cost,
-        'total': round(quantity * unit_cost, 2),
+        'total': quantity * unit_cost,
         'purchase_date': purchase_date, 'note': note})
 
 
@@ -238,9 +238,11 @@ def get_total_spent():
 
 
 def export_purchase_csv():
-    records = [tuple(row[key] for key in ('purchase_id', 'invoice_number', 'supplier', 'product',
-                                          'quantity', 'unit_cost', 'total', 'purchase_date',
-                                          'payment_mode')) for row in rows()]
+    records = [tuple(row[key] if key not in ('unit_cost', 'total')
+                     else money_from_cents(row[key])
+                     for key in ('purchase_id', 'invoice_number', 'supplier', 'product',
+                                 'quantity', 'unit_cost', 'total', 'purchase_date',
+                                 'payment_mode')) for row in rows()]
     from layout import export_to_csv
     export_to_csv(None, ('Purchase Id', 'Invoice', 'Supplier', 'Product', 'Quantity',
                          'Unit Cost', 'Total', 'Purchase Date', 'Payment'), records,
@@ -263,9 +265,9 @@ def _decorate(detail_frame, widgets, mode):
         row = query_one('SELECT quantity, cost_price, price FROM products WHERE name = ?',
                         (name,))
         if row:
-            crud.set_widget(widgets['unit_cost'], f'{row["cost_price"] or 0:,.2f}')
+            crud.set_widget(widgets['unit_cost'], format_money(row['cost_price'] or 0))
             widgets['available'].config(
-                text=f'Available: {row["quantity"]} (price {row["price"]:,.2f})')
+                text=f'Available: {row["quantity"]} (price {format_money(row["price"] or 0)})')
             calculate_total()
 
     widgets['product_id'].bind('<<ComboboxSelected>>', on_product_select)

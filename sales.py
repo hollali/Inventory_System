@@ -2,8 +2,8 @@ import crud
 import movements
 import customers
 from app_log import logger
-from database import (commit, execute, is_integrity_error, next_invoice_number, query,
-                      query_one, rollback, to_iso_date)
+from database import (commit, execute, format_money, is_integrity_error, money_from_cents,
+                      money_to_cents, next_invoice_number, query, query_one, rollback, to_iso_date)
 from products import get_product_details
 from layout import FIELD_BG, FONT_FAMILY, PRIMARY, button, fs, px, py, scale
 from tkinter import *
@@ -102,11 +102,11 @@ def _credit_within_limit(customer_id, new_total, old_total, payment_mode,
     old_contrib = (old_total or 0) if (old_payment_mode == 'Credit'
                                        and old_customer_id == customer_id) else 0
     projected = customers.get_balance(customer_id) - old_contrib + (new_total or 0)
-    if projected > limit + 0.005:
+    if projected > limit:
         crud.messagebox.showerror(
             'Error',
-            f'Credit limit exceeded: new balance {projected:,.2f} would exceed '
-            f'the limit of {limit:,.2f}')
+            f'Credit limit exceeded: new balance {format_money(projected)} would exceed '
+            f'the limit of {format_money(limit)}')
         return False
     return True
 
@@ -115,7 +115,7 @@ def add_record(data):
     cleaned = crud.validate_data(SALES_SPEC, data, 'add')
     if cleaned is None:
         return False
-    cleaned['total'] = round(cleaned['quantity'] * cleaned['unit_price'], 2)
+    cleaned['total'] = cleaned['quantity'] * cleaned['unit_price']
     cleaned['invoice_number'] = next_invoice_number('INV', 'sales')
     cleaned['customer_id'] = _resolve_customer(cleaned.get('customer'),
                                                cleaned.get('payment_mode') or 'Cash')
@@ -157,7 +157,7 @@ def update_record(data):
     cleaned = crud.validate_data(SALES_SPEC, data, 'update')
     if cleaned is None:
         return False
-    cleaned['total'] = round(cleaned['quantity'] * cleaned['unit_price'], 2)
+    cleaned['total'] = cleaned['quantity'] * cleaned['unit_price']
     cleaned['customer_id'] = _resolve_customer(cleaned.get('customer'),
                                                cleaned.get('payment_mode') or 'Cash')
     try:
@@ -271,8 +271,11 @@ def add_order(lines, sale_date, customer, payment_mode='Cash', customer_id=None,
             return None
         try:
             quantity = int(str(line.get('quantity')).strip())
-            unit_price = float(str(line.get('unit_price')).strip().replace(',', ''))
+            unit_price = money_to_cents(line.get('unit_price'))
         except (TypeError, ValueError):
+            crud.messagebox.showerror('Error', 'Every line needs a quantity and a unit price')
+            return None
+        if unit_price is None:
             crud.messagebox.showerror('Error', 'Every line needs a quantity and a unit price')
             return None
         if quantity <= 0 or unit_price < 0:
@@ -281,7 +284,7 @@ def add_order(lines, sale_date, customer, payment_mode='Cash', customer_id=None,
             return None
         prepared.append((product_id, quantity, unit_price))
 
-    total = round(sum(quantity * unit_price for _, quantity, unit_price in prepared), 2)
+    total = sum(quantity * unit_price for _, quantity, unit_price in prepared)
     if not _credit_within_limit(customer_id, total, None, payment_mode):
         return None
 
@@ -295,7 +298,7 @@ def add_order(lines, sale_date, customer, payment_mode='Cash', customer_id=None,
                     'Error', f'Insufficient stock for {quantity} unit(s) (in stock: {stock})')
                 return None
         for product_id, quantity, unit_price in prepared:
-            line_total = round(quantity * unit_price, 2)
+            line_total = quantity * unit_price
             cursor = execute(
                 'INSERT INTO sales (invoice_number, product_id, quantity, unit_price, total, '
                 'sale_date, customer, payment_mode, customer_id) '
@@ -362,7 +365,7 @@ def record_return(data):
         execute('INSERT INTO returns (sale_id, product_id, quantity, unit_price, total, '
                 'return_date, customer, invoice_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 (sale_id, sale['product_id'], quantity, sale['unit_price'],
-                 round(quantity * sale['unit_price'], 2), return_date,
+                 quantity * sale['unit_price'], return_date,
                  sale['customer'], sale['invoice_number']))
         execute('UPDATE products SET quantity = quantity + ? WHERE product_id = ?',
                 (quantity, sale['product_id']))
@@ -471,9 +474,11 @@ def get_total_revenue():
 
 
 def export_sale_csv():
-    records = [tuple(row[key] for key in ('sale_id', 'invoice_number', 'product', 'quantity',
-                                          'unit_price', 'total', 'sale_date', 'customer',
-                                          'payment_mode')) for row in rows()]
+    records = [tuple(row[key] if key not in ('unit_price', 'total')
+                     else money_from_cents(row[key])
+                     for key in ('sale_id', 'invoice_number', 'product', 'quantity',
+                                 'unit_price', 'total', 'sale_date', 'customer',
+                                 'payment_mode')) for row in rows()]
     from layout import export_to_csv
     export_to_csv(None, ('Sale Id', 'Invoice', 'Product', 'Quantity', 'Unit Price', 'Total',
                          'Sale Date', 'Customer', 'Payment'), records, 'sales.csv')
@@ -498,7 +503,7 @@ def _decorate(detail_frame, widgets, mode):
         details = get_product_details(name)
         if details:
             price, stock = details
-            crud.set_widget(widgets['unit_price'], f'{price:,.2f}')
+            crud.set_widget(widgets['unit_price'], format_money(price))
             widgets['available'].config(text=f'Available: {stock}')
             calculate_total()
 
@@ -573,7 +578,7 @@ def show_multi_item_dialog(window):
         if details:
             price, stock = details
             price_entry.delete(0, END)
-            price_entry.insert(0, f'{price:,.2f}')
+            price_entry.insert(0, format_money(price))
             available_label.config(text=f'Available: {stock}')
 
     product_cb.bind('<<ComboboxSelected>>', on_product_select)

@@ -6,7 +6,8 @@ from tkcalendar import DateEntry
 import crud
 import movements
 from app_log import logger
-from database import (commit, execute, is_integrity_error, query, query_one, rollback, to_iso_date)
+from database import (commit, execute, format_money, is_integrity_error, money_from_cents,
+                      money_to_cents, query, query_one, rollback, to_iso_date)
 from layout import (FONT_FAMILY, PRIMARY, FIELD_BG, ToolTip, button, export_to_csv,
                     fs, is_number, ph, px, pw, py, scale)
 
@@ -171,7 +172,7 @@ def get_balance(customer_id):
         "- COALESCE((SELECT SUM(amount) FROM credit_payments WHERE customer_id = ?), 0) AS balance "
         "FROM sales s WHERE s.customer_id = ? AND s.payment_mode = 'Credit'",
         (customer_id, customer_id, customer_id))
-    return round(row['balance'], 2) if row else 0.0
+    return int(row['balance'] or 0) if row else 0
 
 
 def customer_balances_rows():
@@ -204,8 +205,8 @@ def customer_ledger_rows(customer_id):
         'ORDER BY dt, kind', (customer_id, customer_id, customer_id))]
     running = 0
     for entry in entries:
-        running += entry['amount'] or 0
-        entry['balance'] = round(running, 2)
+        running += int(entry['amount'] or 0)
+        entry['balance'] = running
     return entries
 
 
@@ -220,12 +221,13 @@ def add_payment(customer_id, amount, payment_date, note=None):
         if customer is None:
             crud.messagebox.showerror('Error', 'Selected customer not found')
             return False
+        amount_cents = money_to_cents(amount)
         created_by = None
         if isinstance(movements.current_user, dict):
             created_by = movements.current_user.get('empid')
         execute('INSERT INTO credit_payments (customer_id, amount, payment_date, note, '
                 'created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-                (customer_id, amount, payment_date, note, created_by,
+                (customer_id, amount_cents, payment_date, note, created_by,
                  datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
         commit()
         return True
@@ -249,8 +251,10 @@ def delete_payment(payment_id):
 
 
 def export_customer_csv():
-    records = [tuple(row[key] for key in ('customer_id', 'name', 'phone', 'email', 'address',
-                                          'credit_limit', 'balance')) for row in rows()]
+    records = [tuple(money_from_cents(row[key]) if key in ('credit_limit', 'balance')
+                     else row[key]
+                     for key in ('customer_id', 'name', 'phone', 'email', 'address',
+                                 'credit_limit', 'balance')) for row in rows()]
     export_to_csv(None, ('Customer Id', 'Name', 'Phone', 'Email', 'Address',
                          'Credit Limit', 'Balance'), records, 'customers.csv')
 
@@ -258,7 +262,7 @@ def export_customer_csv():
 def _decorate(detail_frame, widgets, mode):
     if mode == 'update':
         customer_id = CUSTOMERS_SPEC.get('selected')
-        widgets['balance'].config(text=f'Balance: {get_balance(customer_id):,.2f}')
+        widgets['balance'].config(text=f'Balance: {format_money(get_balance(customer_id))}')
 
 
 CUSTOMERS_SPEC['decorate'] = _decorate
@@ -294,7 +298,7 @@ def show_payment_dialog(window, customer_id):
     Label(body, text=f'Customer: {customer["name"]}',
           font=(FONT_FAMILY, fs(SY, 13), 'bold'), bg='white').grid(
         row=0, column=0, columnspan=2, sticky='w', pady=py(SY, 4))
-    Label(body, text=f'Outstanding balance: {get_balance(customer_id):,.2f}',
+    Label(body, text=f'Outstanding balance: {format_money(get_balance(customer_id))}',
           font=(FONT_FAMILY, fs(SY, 12)), bg='white', fg='#666666').grid(
         row=1, column=0, columnspan=2, sticky='w', pady=py(SY, 4))
 
@@ -386,15 +390,18 @@ def show_customer_ledger(window, customer_id):
         tree.delete(*tree.get_children())
         for entry in entries:
             tree.insert('', END, values=(entry['dt'], entry['kind'], entry['ref'],
-                                         f'{entry["amount"]:,.2f}', f'{entry["balance"]:,.2f}'))
+                                         format_money(entry['amount']),
+                                         format_money(entry['balance'])))
         summary_label.config(
-            text=f'{len(entries)} entry(s) | Outstanding balance: {get_balance(customer_id):,.2f}')
+            text=f'{len(entries)} entry(s) | Outstanding balance: '
+                 f'{format_money(get_balance(customer_id))}')
 
     def export():
         entries = customer_ledger_rows(customer_id)
         export_to_csv(dialog, ('Date', 'Type', 'Reference', 'Amount', 'Running Balance'),
-                      [(e['dt'], e['kind'], e['ref'], e['amount'], e['balance'])
-                       for e in entries], f'ledger_customer_{customer_id}.csv')
+                      [(e['dt'], e['kind'], e['ref'], money_from_cents(e['amount']),
+                        money_from_cents(e['balance'])) for e in entries],
+                      f'ledger_customer_{customer_id}.csv')
 
     controls = Frame(dialog, bg='white')
     controls.pack(pady=py(SY, 10))

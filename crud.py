@@ -4,8 +4,8 @@ from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
 
 from app_log import logger
-from database import (commit, execute, is_integrity_error, next_id, query, query_one, rollback,
-                      to_iso_date)
+from database import (commit, execute, format_money, is_integrity_error, money_from_cents,
+                      money_to_cents, next_id, query, query_one, rollback, to_iso_date)
 from layout import (FIELD_BG, FONT_FAMILY, PRIMARY, ToolTip, resource_path, button, export_to_csv,
                     fs, is_number, is_positive_int, ph, pw, px, py, scale,
                     validate_email, validate_phone)
@@ -102,8 +102,9 @@ def delete_row(spec, pk_value):
 
 def export_csv(spec):
     filename, headers, keys = spec['csv']
-    records = [tuple(row[key] for key in keys) for row in query(
-        f"SELECT {', '.join(keys)} FROM {spec['table']}")]
+    money_keys = {field['key'] for field in spec['fields'] if field.get('format') == 'money'}
+    records = [tuple(money_from_cents(row[key]) if key in money_keys else row[key] for key in keys)
+               for row in query(f"SELECT {', '.join(keys)} FROM {spec['table']}")]
     export_to_csv(None, headers, records, filename)
 
 
@@ -148,7 +149,10 @@ def validate_data(spec, data, mode):
         if field.get('store') == 'int':
             data[key] = int(str(value).strip())
         elif field.get('store') == 'float':
-            data[key] = float(str(value).strip().replace(',', ''))
+            if field.get('format') == 'money':
+                data[key] = money_to_cents(value)
+            else:
+                data[key] = float(str(value).strip().replace(',', ''))
         elif field.get('store') == 'date':
             data[key] = to_iso_date(str(value).strip())
     return data
@@ -159,7 +163,7 @@ def format_value(field, value):
         return ''
     if field and field.get('format') == 'money':
         try:
-            return f'{float(value):,.2f}'
+            return format_money(value)
         except (ValueError, TypeError):
             return str(value)
     if field and field.get('format') == 'int':
