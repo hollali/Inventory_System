@@ -221,12 +221,14 @@ def _copy_db_file(src_file, dst_file):
 
 
 def _backup_database():
-    db_file = db_file_path()
-    if not os.path.exists(db_file):
+    src = db_file_path()
+    if not os.path.exists(src):
         return None
+    os.makedirs(BACKUP_DIR, exist_ok=True)
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    backup_file = f'{db_file}.backup_{timestamp}'
-    _copy_db_file(db_file, backup_file)
+    backup_file = os.path.join(BACKUP_DIR, f'{os.path.basename(src)}.backup_{timestamp}')
+    _copy_db_file(src, backup_file)
+    _prune_backups(BACKUP_DIR, os.path.basename(src))
     return backup_file
 
 
@@ -249,16 +251,10 @@ def _prune_backups(directory, prefix):
 
 
 def backup_now():
-    src = db_file_path()
-    if not os.path.exists(src):
-        return None
-    os.makedirs(BACKUP_DIR, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    dst = os.path.join(BACKUP_DIR, f'{os.path.basename(src)}.backup_{timestamp}')
-    _copy_db_file(src, dst)
-    logger.info('Database backup created: %s', dst)
-    _prune_backups(BACKUP_DIR, os.path.basename(src))
-    return dst
+    backup_file = _backup_database()
+    if backup_file:
+        logger.info('Database backup created: %s', backup_file)
+    return backup_file
 
 
 def backup_if_due(max_age_days=1):
